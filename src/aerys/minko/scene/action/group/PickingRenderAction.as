@@ -1,10 +1,8 @@
 package aerys.minko.scene.action.group
 {
-	import aerys.minko.render.effect.IEffectPass;
 	import aerys.minko.render.effect.picking.PickingEffect;
 	import aerys.minko.render.renderer.IRenderer;
-	import aerys.minko.render.renderer.state.RenderState;
-	import aerys.minko.scene.action.ActionType;
+	import aerys.minko.render.renderer.state.RendererState;
 	import aerys.minko.scene.action.IAction;
 	import aerys.minko.scene.node.IScene;
 	import aerys.minko.scene.node.mesh.IMesh;
@@ -33,7 +31,9 @@ package aerys.minko.scene.action.group
 			return true;
 		}
 		
-		public function infix(scene : IScene, visitor : ISceneVisitor, renderer : IRenderer) : Boolean
+		public function infix(scene		: IScene,
+							  visitor	: ISceneVisitor, 
+							  renderer	: IRenderer) : Boolean
 		{
 			var mesh : IMesh	= scene as IMesh;
 			
@@ -53,7 +53,7 @@ package aerys.minko.scene.action.group
 			
 			renderer.begin();
 			
-			var state	: RenderState = renderer.state;
+			var state	: RendererState = renderer.state;
 			
 			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, localData, worldData))
 			{

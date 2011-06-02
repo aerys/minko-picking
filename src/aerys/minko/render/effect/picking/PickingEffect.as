@@ -5,7 +5,7 @@ package aerys.minko.render.effect.picking
 	import aerys.minko.render.effect.IEffectPass;
 	import aerys.minko.render.effect.basic.BasicStyle;
 	import aerys.minko.render.renderer.state.Blending;
-	import aerys.minko.render.renderer.state.RenderState;
+	import aerys.minko.render.renderer.state.RendererState;
 	import aerys.minko.render.renderer.state.TriangleCulling;
 	import aerys.minko.render.shader.DynamicShader;
 	import aerys.minko.render.shader.node.common.ClipspacePosition;
@@ -39,7 +39,7 @@ package aerys.minko.render.effect.picking
 			return _passes;
 		}
 		
-		public function fillRenderState(state		: RenderState,
+		public function fillRenderState(state		: RendererState,
 										styleStack	: StyleStack, 
 										local		: LocalData, 
 										world		: Dictionary) : Boolean

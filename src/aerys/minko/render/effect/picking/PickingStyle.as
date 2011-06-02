@@ -4,6 +4,7 @@ package aerys.minko.render.effect.picking
 
 	public final class PickingStyle
 	{
-		public static const OCLUDER : int = Style.getStyleId('pickingOcluder');
+		public static const OCLUDER			: int = Style.getStyleId('pickingOcluder');
+		public static const CURRENT_COLOR	: int = Style.getStyleId('pickingCurrentColor');
 	}
 }
