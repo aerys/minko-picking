@@ -1,4 +1,4 @@
-package aerys.minko.scene.action.group
+package aerys.minko.scene.action.mesh
 {
 	import aerys.minko.render.effect.picking.PickingEffect;
 	import aerys.minko.render.renderer.IRenderer;
@@ -15,7 +15,7 @@ package aerys.minko.scene.action.group
 	
 	import flash.utils.Dictionary;
 	
-	public class PickingRenderAction implements IAction
+	public class PickingAction implements IAction
 	{
 		protected static const PICKING_EFFECT_PASS : PickingEffect = new PickingEffect();
 		
@@ -38,7 +38,7 @@ package aerys.minko.scene.action.group
 			var mesh : IMesh	= scene as IMesh;
 			
 			if (!mesh)
-				throw new Error();
+				throw new Error('This action should be called only on meshes');
 			
 			// invalidate world objects cache
 			for each (var worldObject : IWorldData in visitor.worldData)
