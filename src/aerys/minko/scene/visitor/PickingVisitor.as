@@ -26,28 +26,34 @@ package aerys.minko.scene.visitor
 	
 	public class PickingVisitor implements ISceneVisitor
 	{
-		protected static const ACTION_TYPES				: uint		= ActionType.RECURSE | ActionType.UPDATE_LOCAL_DATA;
-		protected static const PICKING_RENDER_ACTION	: IAction	= new PickingAction();
-		protected static const COLOR_INCREMENT			: uint		= 1;
-		protected static const RECTANGLE				: Rectangle = new Rectangle(0, 0, 10, 10);
+		protected static const ACTION_TYPES_EXPLORE_PASS	: uint		= ActionType.RECURSE;
+		protected static const ACTION_TYPES_RENDER_PASS		: uint		= ActionType.RECURSE | ActionType.UPDATE_LOCAL_DATA;
 		
-		protected static const EVENT_CLICK				: uint = 1 << 0;
-		protected static const EVENT_DOUBLE_CLICK		: uint = 1 << 1;
-		protected static const EVENT_MOUSE_DOWN			: uint = 1 << 2;
-		protected static const EVENT_MOUSE_MOVE			: uint = 1 << 3;
-		protected static const EVENT_MOUSE_OUT			: uint = 1 << 4;
-		protected static const EVENT_MOUSE_OVER			: uint = 1 << 5;
-		protected static const EVENT_MOUSE_UP			: uint = 1 << 6;
-		protected static const EVENT_MOUSE_WHEEL		: uint = 1 << 7;
-		protected static const EVENT_ROLL_OVER			: uint = 1 << 8;
-		protected static const EVENT_ROLL_OUT			: uint = 1 << 9;
+		protected static const PICKING_RENDER_ACTION		: IAction	= new PickingAction();
+		protected static const COLOR_INCREMENT				: uint		= 1;
+		protected static const RECTANGLE					: Rectangle = new Rectangle(0, 0, 10, 10);
 		
-		protected static const DRAW_EVERYTIME_EVENTS	: uint = 
+		protected static const EVENT_CLICK					: uint = 1 << 0;
+		protected static const EVENT_DOUBLE_CLICK			: uint = 1 << 1;
+		protected static const EVENT_MOUSE_DOWN				: uint = 1 << 2;
+		protected static const EVENT_MOUSE_MOVE				: uint = 1 << 3;
+		protected static const EVENT_MOUSE_OUT				: uint = 1 << 4;
+		protected static const EVENT_MOUSE_OVER				: uint = 1 << 5;
+		protected static const EVENT_MOUSE_UP				: uint = 1 << 6;
+		protected static const EVENT_MOUSE_WHEEL			: uint = 1 << 7;
+		protected static const EVENT_ROLL_OVER				: uint = 1 << 8;
+		protected static const EVENT_ROLL_OUT				: uint = 1 << 9;
+		
+		protected static const DRAW_EVERYTIME_EVENTS		: uint = 
 			EVENT_MOUSE_MOVE | EVENT_MOUSE_OUT | EVENT_MOUSE_OVER | EVENT_ROLL_OVER | EVENT_ROLL_OUT;
 		
 		protected var _hasSetMouseEvents		: Boolean;
 		protected var _refreshRate				: uint;
 		protected var _refreshIndex				: uint;
+		protected var _numNodes					: uint;
+		
+		protected var _currentPass				: uint;
+		protected var _hadToDrawLastTime		: Boolean;
 		
 		protected var _localData 				: LocalData;
 		protected var _worldData 				: Dictionary;
@@ -67,6 +73,11 @@ package aerys.minko.scene.visitor
 		protected var _lastMouseOver			: PickableGroup;
 		protected var _currentMouseOver			: PickableGroup;
 		
+		public function get numNodes()		: uint			{ return _numNodes; }
+		public function get localData()		: LocalData		{ return _localData; }
+		public function get worldData()		: Dictionary	{ return _worldData; }
+		public function get renderingData()	: RenderingData	{ return _renderingData; }
+		
 		public function PickingVisitor(refreshRate : uint = 1) 
 		{
 			_pickingSceneNodes			= new Vector.<PickableGroup>();
@@ -74,24 +85,11 @@ package aerys.minko.scene.visitor
 			
 			_refreshIndex				= 0;
 			_refreshRate				= refreshRate;
+			_numNodes					= 0;
 			
 			_viewportX = _viewportY		= 0;
 		}
 		
-		public function get localData() : LocalData
-		{
-			return _localData;
-		}
-		
-		public function get worldData() : Dictionary
-		{
-			return _worldData;
-		}
-		
-		public function get renderingData() : RenderingData
-		{
-			return _renderingData;
-		}
 		
 		public function processSceneGraph(scene			: IScene, 
 										  localData		: LocalData, 
@@ -112,19 +110,34 @@ package aerys.minko.scene.visitor
 			
 			configure();
 			
-			_renderer.clear();
-			renderSceneToBitmapData(scene);
+			if (!_hadToDrawLastTime)
+			{
+				exploreSceneGraphForEvents(scene);
+				
+				if (!((_waitingForDispatchEvents & _subscribedEvents) ||
+					(_subscribedEvents & DRAW_EVERYTIME_EVENTS)))
+				{
+					_hadToDrawLastTime = false;
+					return;
+				}
+				
+				createRenderStates(scene);
+			}
+			else
+			{
+				createRenderStates(scene);
+				if (!((_waitingForDispatchEvents & _subscribedEvents) ||
+					(_subscribedEvents & DRAW_EVERYTIME_EVENTS)))
+				{
+					_hadToDrawLastTime = false;
+					return;
+				}
+			}
 			
-			if (!((_waitingForDispatchEvents & _subscribedEvents) ||
-				(_subscribedEvents & DRAW_EVERYTIME_EVENTS)))
-				return;
-			
-			_renderer.drawToBackBuffer();
-			_renderer.dumpBackbuffer(_bitmapData);
-			_renderer.present();
-			
+			renderToBitmapData();
 			updateMouseOverElement();
 			dispatchEvents();
+			_hadToDrawLastTime = true;
 		}
 		
 		protected function configure() : void
@@ -169,20 +182,40 @@ package aerys.minko.scene.visitor
 				_viewportX = point.x;
 				_viewportY = point.y;
 			}
-		}
-		
-		protected function renderSceneToBitmapData(scene : IScene) : void
-		{
+			
 			RECTANGLE.x = _viewportX - 5;
 			RECTANGLE.y = _viewportY - 5;
+		}
+		
+		protected function exploreSceneGraphForEvents(scene : IScene) : void
+		{
+			_numNodes		= 0;
+			_currentPass	= 0;
+			visit(scene);
+		}
+		
+		protected function createRenderStates(scene : IScene) : void
+		{
+			_numNodes		= 0;
+			_currentPass	= 1;
 			
 			_renderingData.styleStack.push(new Style());
 			_renderingData.styleStack.set(PickingStyle.CURRENT_COLOR, 0);
-//			_renderingData.styleStack.set(PickingStyle.RECTANGLE, RECTANGLE);
+			_renderingData.styleStack.set(PickingStyle.RECTANGLE, RECTANGLE);
+			
+			_renderer.clear();
 			
 			visit(scene);
 			
 			_renderingData.styleStack.pop();
+		}
+		
+		protected function renderToBitmapData() : void
+		{
+			
+			_renderer.drawToBackBuffer();
+			_renderer.dumpBackbuffer(_bitmapData);
+			_renderer.present();
 		}
 		
 		protected function updateMouseOverElement() : void
@@ -190,7 +223,6 @@ package aerys.minko.scene.visitor
 			var pixelColor : uint = _bitmapData.getPixel(_viewportX, _viewportY);
 			
 			_lastMouseOver = _currentMouseOver;
-			
 			if (pixelColor == 0)
 			{
 				_currentMouseOver = null;
@@ -274,6 +306,49 @@ package aerys.minko.scene.visitor
 		
 		public function visit(scene : IScene) : void
 		{
+			if (_currentPass == 0) visitExploreForEvents(scene);
+			else visitBuildRenderStates(scene);
+			
+			++_numNodes;
+		}
+		
+		protected function visitExploreForEvents(scene : IScene) : void
+		{
+			var actions 	: Vector.<IAction> 	= scene.actions;
+			var numActions	: int				= actions.length;
+			
+			var	i : int, action : IAction, actionType : uint;
+			
+			if (scene is PickableGroup)
+			{
+				var pickableGroup : PickableGroup = scene as PickableGroup;
+				_subscribedEvents |= pickableGroup.subscribedEvents;
+			}
+			
+			for (i = 0; i < numActions; ++i)
+			{
+				action = actions[i];
+				if (action.type & ACTION_TYPES_EXPLORE_PASS)
+					action.prefix(scene, this, _renderer);
+			}
+			
+			for (i = 0; i < numActions; ++i)
+			{
+				action = actions[i];
+				if (action.type & ACTION_TYPES_EXPLORE_PASS)
+					action.infix(scene, this, _renderer);
+			}
+			
+			for (i = 0; i < numActions; ++i)
+			{
+				action = actions[i];
+				if (action.type & ACTION_TYPES_EXPLORE_PASS)
+					action.postfix(scene, this, _renderer);
+			}
+		}
+		
+		protected function visitBuildRenderStates(scene : IScene) : void
+		{
 			var actions 	: Vector.<IAction> 	= scene.actions;
 			var numActions	: int				= actions.length;
 			
@@ -296,7 +371,7 @@ package aerys.minko.scene.visitor
 				action		= actions[i];
 				actionType	= action.type;
 				
-				if (actionType & ACTION_TYPES)
+				if (actionType & ACTION_TYPES_RENDER_PASS)
 					action.prefix(scene, this, _renderer);
 			}
 			
@@ -305,7 +380,7 @@ package aerys.minko.scene.visitor
 				action		= actions[i];
 				actionType	= action.type;
 				
-				if (actionType & ACTION_TYPES)
+				if (actionType & ACTION_TYPES_RENDER_PASS)
 					action.infix(scene, this, _renderer);
 				
 				if (actionType & ActionType.RENDER)
@@ -317,7 +392,7 @@ package aerys.minko.scene.visitor
 				action		= actions[i];
 				actionType	= action.type;
 				
-				if (actionType & ACTION_TYPES)
+				if (actionType & ACTION_TYPES_RENDER_PASS)
 					action.postfix(scene, this, _renderer);
 			}
 		}
