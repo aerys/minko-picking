@@ -5,6 +5,14 @@ package aerys.minko.scene.node.group
 	import flash.events.IEventDispatcher;
 	import flash.events.MouseEvent;
 	
+	[Event(name="click", type="flash.events.MouseEvent")]
+	[Event(name="mouseDown", type="flash.events.MouseEvent")]
+	[Event(name="mouseUp", type="flash.events.MouseEvent")]
+	[Event(name="mouseOver", type="flash.events.MouseEvent")]
+	[Event(name="mouseWheel", type="flash.events.MouseEvent")]
+	[Event(name="rollOver", type="flash.events.MouseEvent")]
+	[Event(name="rollOut", type="flash.events.MouseEvent")]
+	
 	public class PickableGroup extends Group implements IEventDispatcher
 	{
 		protected static const EVENT_CLICK			: uint = 1 << 0;

@@ -10,7 +10,7 @@ package aerys.minko.scene.visitor
 	import aerys.minko.scene.node.group.PickableGroup;
 	import aerys.minko.scene.visitor.data.LocalData;
 	import aerys.minko.scene.visitor.data.RenderingData;
-	import aerys.minko.scene.visitor.data.Style;
+	import aerys.minko.render.effect.Style
 	import aerys.minko.scene.visitor.data.ViewportData;
 	
 	import flash.display.Bitmap;
@@ -73,10 +73,11 @@ package aerys.minko.scene.visitor
 		protected var _lastMouseOver			: PickableGroup;
 		protected var _currentMouseOver			: PickableGroup;
 		
-		public function get numNodes()		: uint			{ return _numNodes; }
-		public function get localData()		: LocalData		{ return _localData; }
-		public function get worldData()		: Dictionary	{ return _worldData; }
-		public function get renderingData()	: RenderingData	{ return _renderingData; }
+		public function get numNodes()		: uint				{ return _numNodes; }
+		public function get localData()		: LocalData			{ return _localData; }
+		public function get worldData()		: Dictionary		{ return _worldData; }
+		public function get renderingData()	: RenderingData		{ return _renderingData; }
+		public function get ancestors()		: Vector.<IScene>	{ return null; }
 		
 		public function PickingVisitor(refreshRate : uint = 1) 
 		{

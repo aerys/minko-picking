@@ -1,6 +1,6 @@
 package aerys.minko.render.effect.picking
 {
-	import aerys.minko.scene.visitor.data.Style;
+	import aerys.minko.render.effect.Style
 
 	public final class PickingStyle
 	{

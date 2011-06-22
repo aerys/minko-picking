@@ -10,6 +10,7 @@ package aerys.minko.scene.action.mesh
 	import aerys.minko.scene.visitor.data.IWorldData;
 	import aerys.minko.scene.visitor.data.LocalData;
 	import aerys.minko.scene.visitor.data.RenderingData;
+	import aerys.minko.type.stream.IVertexStream;
 	import aerys.minko.type.stream.IndexStream;
 	import aerys.minko.type.stream.VertexStreamList;
 	
@@ -48,7 +49,7 @@ package aerys.minko.scene.action.mesh
 			var localData			: LocalData			= visitor.localData;
 			var worldData			: Dictionary		= visitor.worldData;
 			var renderingData		: RenderingData		= visitor.renderingData;
-			var vertexStreamList 	: VertexStreamList	= mesh.vertexStreamList;
+			var vertexStreamList 	: IVertexStream		= mesh.vertexStream;
 			var indexStream 		: IndexStream		= mesh.indexStream;
 			
 			renderer.begin();
