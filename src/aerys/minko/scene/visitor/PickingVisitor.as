@@ -168,10 +168,11 @@ package aerys.minko.scene.visitor
 				
 				_hasSetMouseEvents = true;
 				
-//				var b : Bitmap = new Bitmap(_bitmapData);
-//				b.width = 300;
-//				b.scaleY = b.scaleX;
-//				stage.addChild(b);
+				var b : Bitmap = new Bitmap(_bitmapData);
+				b.width = 300;
+				b.x = b.y = 100;
+				b.height = b.width * (_bitmapData.height / _bitmapData.width);
+				stage.addChild(b);
 			}
 			
 			if (_waitingForDispatchEvents & EVENT_MOUSE_MOVE)
