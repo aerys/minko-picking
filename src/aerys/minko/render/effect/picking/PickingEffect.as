@@ -22,8 +22,9 @@ package aerys.minko.render.effect.picking
 	
 	public class PickingEffect implements IEffect, IEffectPass
 	{
-		protected static const POSITION_NODE	: INode = new ClipspacePosition();
-		protected static const COLOR_NODE		: INode	= new Combine(
+		protected static const TARGET			: RenderTarget	= new RenderTarget(RenderTarget.BACKBUFFER, 0, 0, 0);
+		protected static const POSITION_NODE	: INode 		= new ClipspacePosition();
+		protected static const COLOR_NODE		: INode			= new Combine(
 			new StyleParameter(3, PickingStyle.CURRENT_COLOR),
 			new Constant(1)
 		);
@@ -40,6 +41,9 @@ package aerys.minko.render.effect.picking
 		{
 			_passes = new Vector.<IEffectPass>(1, true);
 			_passes[0] = this;
+			
+			_priority = priority;
+			_renderTarget = TARGET;
 		}
 		
 		public function getPasses(styleStack	: StyleStack, 
