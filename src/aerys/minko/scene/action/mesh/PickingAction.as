@@ -4,15 +4,14 @@ package aerys.minko.scene.action.mesh
 	import aerys.minko.render.renderer.IRenderer;
 	import aerys.minko.render.renderer.state.RendererState;
 	import aerys.minko.scene.action.IAction;
+	import aerys.minko.scene.data.IWorldData;
+	import aerys.minko.scene.data.LocalData;
+	import aerys.minko.scene.data.RenderingData;
 	import aerys.minko.scene.node.IScene;
 	import aerys.minko.scene.node.mesh.IMesh;
 	import aerys.minko.scene.visitor.ISceneVisitor;
-	import aerys.minko.scene.visitor.data.IWorldData;
-	import aerys.minko.scene.visitor.data.LocalData;
-	import aerys.minko.scene.visitor.data.RenderingData;
 	import aerys.minko.type.stream.IVertexStream;
 	import aerys.minko.type.stream.IndexStream;
-	import aerys.minko.type.stream.VertexStreamList;
 	
 	import flash.utils.Dictionary;
 	

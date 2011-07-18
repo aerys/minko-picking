@@ -7,15 +7,15 @@ package aerys.minko.render.effect.picking
 	import aerys.minko.render.renderer.state.Blending;
 	import aerys.minko.render.renderer.state.RendererState;
 	import aerys.minko.render.renderer.state.TriangleCulling;
-	import aerys.minko.render.shader.DynamicShader;
+	import aerys.minko.render.shader.Shader;
 	import aerys.minko.render.shader.node.INode;
 	import aerys.minko.render.shader.node.common.ClipspacePosition;
 	import aerys.minko.render.shader.node.leaf.Constant;
 	import aerys.minko.render.shader.node.leaf.StyleParameter;
 	import aerys.minko.render.shader.node.operation.manipulation.Combine;
-	import aerys.minko.scene.visitor.data.LocalData;
-	import aerys.minko.scene.visitor.data.StyleStack;
-	import aerys.minko.scene.visitor.data.ViewportData;
+	import aerys.minko.scene.data.LocalData;
+	import aerys.minko.scene.data.StyleStack;
+	import aerys.minko.scene.data.ViewportData;
 	
 	import flash.geom.Rectangle;
 	import flash.utils.Dictionary;
@@ -27,7 +27,7 @@ package aerys.minko.render.effect.picking
 			new StyleParameter(3, PickingStyle.CURRENT_COLOR),
 			new Constant(1)
 		);
-		protected static const SHADER : DynamicShader = DynamicShader.create(POSITION_NODE, COLOR_NODE);
+		protected static const SHADER : Shader = Shader.create(POSITION_NODE, COLOR_NODE);
 		
 		protected static const RECTANGLE : Rectangle = new Rectangle(0, 0, 10, 10);
 		

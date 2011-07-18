@@ -1,19 +1,18 @@
 package aerys.minko.scene.visitor
 {
 	import aerys.minko.render.Viewport;
+	import aerys.minko.render.effect.Style;
 	import aerys.minko.render.effect.picking.PickingStyle;
 	import aerys.minko.render.renderer.IRenderer;
 	import aerys.minko.scene.action.ActionType;
 	import aerys.minko.scene.action.IAction;
 	import aerys.minko.scene.action.mesh.PickingAction;
+	import aerys.minko.scene.data.LocalData;
+	import aerys.minko.scene.data.RenderingData;
+	import aerys.minko.scene.data.ViewportData;
 	import aerys.minko.scene.node.IScene;
 	import aerys.minko.scene.node.group.PickableGroup;
-	import aerys.minko.scene.visitor.data.LocalData;
-	import aerys.minko.scene.visitor.data.RenderingData;
-	import aerys.minko.render.effect.Style
-	import aerys.minko.scene.visitor.data.ViewportData;
 	
-	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.Stage;
 	import flash.events.MouseEvent;
@@ -22,7 +21,6 @@ package aerys.minko.scene.visitor
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
 	import flash.utils.Dictionary;
-	import flash.utils.getTimer;
 	
 	public class PickingVisitor implements ISceneVisitor
 	{
