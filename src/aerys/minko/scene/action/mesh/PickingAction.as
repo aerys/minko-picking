@@ -24,16 +24,9 @@ package aerys.minko.scene.action.mesh
 			throw new Error('This is a custom action that must be called only by Picking visitors');
 		}
 		
-		public function prefix(scene	: IScene, 
-							   visitor	: ISceneVisitor, 
-							   renderer	: IRenderer) : Boolean
-		{
-			return true;
-		}
-		
-		public function infix(scene		: IScene,
-							  visitor	: ISceneVisitor, 
-							  renderer	: IRenderer) : Boolean
+		public function run(scene		: IScene,
+							visitor		: ISceneVisitor, 
+							renderer	: IRenderer) : Boolean
 		{
 			var mesh : IMesh	= scene as IMesh;
 			
@@ -63,13 +56,6 @@ package aerys.minko.scene.action.mesh
 			
 			renderer.end();
 			
-			return true;
-		}
-		
-		public function postfix(scene		: IScene, 
-								visitor		: ISceneVisitor, 
-								renderer	: IRenderer) : Boolean
-		{
 			return true;
 		}
 	}

@@ -316,34 +316,21 @@ package aerys.minko.scene.visitor
 		{
 			var actions 	: Vector.<IAction> 	= scene.actions;
 			var numActions	: int				= actions.length;
-			
-			var	i : int, action : IAction, actionType : uint;
+			var	action 		: IAction			= null;
 			
 			if (scene is PickableGroup)
 			{
 				var pickableGroup : PickableGroup = scene as PickableGroup;
+				
 				_subscribedEvents |= pickableGroup.subscribedEvents;
 			}
 			
-			for (i = 0; i < numActions; ++i)
+			for (var i : int = 0; i < numActions; ++i)
 			{
 				action = actions[i];
+				
 				if (action.type & ACTION_TYPES_EXPLORE_PASS)
-					action.prefix(scene, this, _renderer);
-			}
-			
-			for (i = 0; i < numActions; ++i)
-			{
-				action = actions[i];
-				if (action.type & ACTION_TYPES_EXPLORE_PASS)
-					action.infix(scene, this, _renderer);
-			}
-			
-			for (i = 0; i < numActions; ++i)
-			{
-				action = actions[i];
-				if (action.type & ACTION_TYPES_EXPLORE_PASS)
-					action.postfix(scene, this, _renderer);
+					action.run(scene, this, _renderer);
 			}
 		}
 		
@@ -351,8 +338,7 @@ package aerys.minko.scene.visitor
 		{
 			var actions 	: Vector.<IAction> 	= scene.actions;
 			var numActions	: int				= actions.length;
-			
-			var	i : int, action : IAction, actionType : uint;
+			var action		: IAction			= null;
 			
 			if (scene is PickableGroup)
 			{
@@ -366,34 +352,12 @@ package aerys.minko.scene.visitor
 				_subscribedEvents |= pickableGroup.subscribedEvents;
 			}
 			
-			for (i = 0; i < numActions; ++i)
+			for (var i : int = 0; i < numActions; ++i)
 			{
-				action		= actions[i];
-				actionType	= action.type;
+				action = actions[i];
 				
-				if (actionType & ACTION_TYPES_RENDER_PASS)
-					action.prefix(scene, this, _renderer);
-			}
-			
-			for (i = 0; i < numActions; ++i)
-			{
-				action		= actions[i];
-				actionType	= action.type;
-				
-				if (actionType & ACTION_TYPES_RENDER_PASS)
-					action.infix(scene, this, _renderer);
-				
-				if (actionType & ActionType.RENDER)
-					PICKING_RENDER_ACTION.infix(scene, this, _renderer);
-			}
-			
-			for (i = 0; i < numActions; ++i)
-			{
-				action		= actions[i];
-				actionType	= action.type;
-				
-				if (actionType & ACTION_TYPES_RENDER_PASS)
-					action.postfix(scene, this, _renderer);
+				if (action.type & ACTION_TYPES_RENDER_PASS)
+					action.run(scene, this, _renderer);
 			}
 		}
 	}
