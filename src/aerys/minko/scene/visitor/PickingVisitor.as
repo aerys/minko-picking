@@ -306,8 +306,10 @@ package aerys.minko.scene.visitor
 		
 		public function visit(scene : IScene) : void
 		{
-			if (_currentPass == 0) visitExploreForEvents(scene);
-			else visitBuildRenderStates(scene);
+			if (_currentPass == 0)
+				visitExploreForEvents(scene);
+			else
+				visitBuildRenderStates(scene);
 			
 			++_numNodes;
 		}
@@ -356,7 +358,9 @@ package aerys.minko.scene.visitor
 			{
 				action = actions[i];
 				
-				if (action.type & ACTION_TYPES_RENDER_PASS)
+				if (action.type == ActionType.RENDER)
+					PICKING_RENDER_ACTION.run(scene, this, _renderer)
+				else if (action.type & ACTION_TYPES_RENDER_PASS)
 					action.run(scene, this, _renderer);
 			}
 		}
