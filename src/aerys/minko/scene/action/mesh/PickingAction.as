@@ -38,23 +38,19 @@ package aerys.minko.scene.action.mesh
 				worldObject.invalidate();
 			
 			// pass "ready to draw" data to the renderer.
-			var localData			: LocalData			= visitor.localData;
-			var worldData			: Dictionary		= visitor.worldData;
-			var renderingData		: RenderingData		= visitor.renderingData;
-			var vertexStreamList 	: IVertexStream		= mesh.vertexStream;
-			var indexStream 		: IndexStream		= mesh.indexStream;
+			var localData		: LocalData			= visitor.localData;
+			var worldData		: Dictionary		= visitor.worldData;
+			var renderingData	: RenderingData		= visitor.renderingData;
+			var state			: RendererState 	= RendererState.create(true);
 			
-			renderer.begin();
-			
-			var state	: RendererState = renderer.state;
+			state.vertexStream = mesh.vertexStream;
+			state.indexStream = mesh.indexStream;
 			
 			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, localData, worldData))
 			{
-				state.setInputStreams(vertexStreamList, indexStream);
+				renderer.pushState(state);
 				renderer.drawTriangles();
 			}
-			
-			renderer.end();
 			
 			return true;
 		}
