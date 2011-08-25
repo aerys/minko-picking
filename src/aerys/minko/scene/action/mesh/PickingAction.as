@@ -11,7 +11,6 @@ package aerys.minko.scene.action.mesh
 	import aerys.minko.scene.node.mesh.IMesh;
 	import aerys.minko.scene.visitor.ISceneVisitor;
 	import aerys.minko.type.stream.IVertexStream;
-	import aerys.minko.type.stream.IndexStream;
 	
 	import flash.utils.Dictionary;
 	
@@ -38,16 +37,19 @@ package aerys.minko.scene.action.mesh
 				worldObject.invalidate();
 			
 			// pass "ready to draw" data to the renderer.
-			var localData		: LocalData			= visitor.localData;
-			var worldData		: Dictionary		= visitor.worldData;
-			var renderingData	: RenderingData		= visitor.renderingData;
-			var state			: RendererState 	= RendererState.create(true);
+			var localData		: LocalData					= visitor.localData;
+			var worldData		: Dictionary				= visitor.worldData;
+			var renderingData	: RenderingData				= visitor.renderingData;
+			var state			: RendererState 			= RendererState.create(true);
+			var vertexStreams	: Vector.<IVertexStream>	= new Vector.<IVertexStream>();
 			
-			state.vertexStream = mesh.vertexStream;
-			state.indexStream = mesh.indexStream;
+			vertexStreams[0] = mesh.vertexStream;
 			
 			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, localData, worldData))
 			{
+				state.setVertexStreamAt(mesh.vertexStream, 0);
+				state.indexStream = mesh.indexStream;
+				
 				renderer.pushState(state);
 				renderer.drawTriangles();
 			}
