@@ -212,10 +212,8 @@ package aerys.minko.scene.visitor
 		
 		protected function renderToBitmapData() : void
 		{
-			
 			_renderer.drawToBackBuffer();
 			_renderer.dumpBackbuffer(_bitmapData);
-			_renderer.present();
 		}
 		
 		protected function updateMouseOverElement() : void
