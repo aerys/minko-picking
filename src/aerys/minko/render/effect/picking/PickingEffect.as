@@ -13,7 +13,7 @@ package aerys.minko.render.effect.picking
 	import aerys.minko.render.shader.node.leaf.Constant;
 	import aerys.minko.render.shader.node.leaf.StyleParameter;
 	import aerys.minko.render.shader.node.operation.manipulation.Combine;
-	import aerys.minko.scene.data.LocalData;
+	import aerys.minko.scene.data.TransformData;
 	import aerys.minko.scene.data.StyleStack;
 	import aerys.minko.scene.data.ViewportData;
 	
@@ -47,7 +47,7 @@ package aerys.minko.render.effect.picking
 		}
 		
 		public function getPasses(styleStack	: StyleStack, 
-								  local			: LocalData, 
+								  local			: TransformData, 
 								  world			: Dictionary) : Vector.<IEffectPass>
 		{
 			return _passes;
@@ -55,7 +55,7 @@ package aerys.minko.render.effect.picking
 		
 		public function fillRenderState(state		: RendererState,
 										styleStack	: StyleStack, 
-										local		: LocalData, 
+										local		: TransformData, 
 										world		: Dictionary) : Boolean
 		{
 			var currentColor		: uint		= styleStack.get(PickingStyle.CURRENT_COLOR, 0) as uint;

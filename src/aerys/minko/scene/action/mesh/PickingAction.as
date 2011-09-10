@@ -5,7 +5,7 @@ package aerys.minko.scene.action.mesh
 	import aerys.minko.render.renderer.state.RendererState;
 	import aerys.minko.scene.action.IAction;
 	import aerys.minko.scene.data.IWorldData;
-	import aerys.minko.scene.data.LocalData;
+	import aerys.minko.scene.data.TransformData;
 	import aerys.minko.scene.data.RenderingData;
 	import aerys.minko.scene.node.IScene;
 	import aerys.minko.scene.node.mesh.IMesh;
@@ -37,7 +37,7 @@ package aerys.minko.scene.action.mesh
 				worldObject.invalidate();
 			
 			// pass "ready to draw" data to the renderer.
-			var localData		: LocalData					= visitor.localData;
+			var transformData		: TransformData					= visitor.transformData;
 			var worldData		: Dictionary				= visitor.worldData;
 			var renderingData	: RenderingData				= visitor.renderingData;
 			var state			: RendererState 			= RendererState.create(true);
@@ -45,7 +45,7 @@ package aerys.minko.scene.action.mesh
 			
 			vertexStreams[0] = mesh.vertexStream;
 			
-			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, localData, worldData))
+			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, transformData, worldData))
 			{
 				state.setVertexStreamAt(mesh.vertexStream, 0);
 				state.indexStream = mesh.indexStream;

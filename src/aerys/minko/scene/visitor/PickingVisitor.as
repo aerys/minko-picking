@@ -7,7 +7,7 @@ package aerys.minko.scene.visitor
 	import aerys.minko.scene.action.ActionType;
 	import aerys.minko.scene.action.IAction;
 	import aerys.minko.scene.action.mesh.PickingAction;
-	import aerys.minko.scene.data.LocalData;
+	import aerys.minko.scene.data.TransformData;
 	import aerys.minko.scene.data.RenderingData;
 	import aerys.minko.scene.data.ViewportData;
 	import aerys.minko.scene.node.IScene;
@@ -53,7 +53,7 @@ package aerys.minko.scene.visitor
 		protected var _currentPass				: uint;
 		protected var _hadToDrawLastTime		: Boolean;
 		
-		protected var _localData 				: LocalData;
+		protected var _transformData 				: TransformData;
 		protected var _worldData 				: Dictionary;
 		protected var _renderingData			: RenderingData
 		protected var _renderer					: IRenderer;
@@ -72,7 +72,7 @@ package aerys.minko.scene.visitor
 		protected var _currentMouseOver			: PickableGroup;
 		
 		public function get numNodes()		: uint				{ return _numNodes; }
-		public function get localData()		: LocalData			{ return _localData; }
+		public function get transformData()		: TransformData			{ return _transformData; }
 		public function get worldData()		: Dictionary		{ return _worldData; }
 		public function get renderingData()	: RenderingData		{ return _renderingData; }
 		public function get ancestors()		: Vector.<IScene>	{ return null; }
@@ -91,7 +91,7 @@ package aerys.minko.scene.visitor
 		
 		
 		public function processSceneGraph(scene			: IScene, 
-										  localData		: LocalData, 
+										  transformData		: TransformData, 
 										  worldData		: Dictionary, 
 										  renderingData	: RenderingData,
 										  renderer		: IRenderer) : void
@@ -99,7 +99,7 @@ package aerys.minko.scene.visitor
 			if (++_refreshIndex < _refreshRate)
 				return;
 			
-			_localData			= localData;
+			_transformData			= transformData;
 			_worldData			= worldData;
 			_renderingData		= renderingData;
 			_renderer			= renderer;
