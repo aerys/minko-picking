@@ -37,13 +37,10 @@ package aerys.minko.scene.action.mesh
 				worldObject.invalidate();
 			
 			// pass "ready to draw" data to the renderer.
-			var transformData		: TransformData					= visitor.transformData;
+			var transformData	: TransformData				= visitor.transformData;
 			var worldData		: Dictionary				= visitor.worldData;
 			var renderingData	: RenderingData				= visitor.renderingData;
 			var state			: RendererState 			= RendererState.create(true);
-			var vertexStreams	: Vector.<IVertexStream>	= new Vector.<IVertexStream>();
-			
-			vertexStreams[0] = mesh.vertexStream;
 			
 			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, transformData, worldData))
 			{
