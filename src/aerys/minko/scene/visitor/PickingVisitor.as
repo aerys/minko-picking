@@ -25,7 +25,7 @@ package aerys.minko.scene.visitor
 	public class PickingVisitor implements ISceneVisitor
 	{
 		protected static const ACTION_TYPES_EXPLORE_PASS	: uint		= ActionType.RECURSE;
-		protected static const ACTION_TYPES_RENDER_PASS		: uint		= ActionType.RECURSE | ActionType.UPDATE_LOCAL_DATA;
+		protected static const ACTION_TYPES_RENDER_PASS		: uint		= ActionType.RECURSE | ActionType.UPDATE_TRANSFORM_DATA;
 		
 		protected static const PICKING_RENDER_ACTION		: IAction	= new PickingAction();
 		protected static const COLOR_INCREMENT				: uint		= 1;
@@ -99,7 +99,7 @@ package aerys.minko.scene.visitor
 			if (++_refreshIndex < _refreshRate)
 				return;
 			
-			_transformData			= transformData;
+			_transformData		= transformData;
 			_worldData			= worldData;
 			_renderingData		= renderingData;
 			_renderer			= renderer;
@@ -214,6 +214,7 @@ package aerys.minko.scene.visitor
 		{
 			_renderer.drawToBackBuffer();
 			_renderer.dumpBackbuffer(_bitmapData);
+			_renderer.clear();
 		}
 		
 		protected function updateMouseOverElement() : void
