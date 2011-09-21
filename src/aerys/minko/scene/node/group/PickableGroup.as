@@ -28,7 +28,6 @@ package aerys.minko.scene.node.group
 		
 		protected static var _eventsToMask			: Object = null;
 		
-		protected var _dispatcher		: IEventDispatcher;
 		protected var _useHandCursor	: Boolean;
 		protected var _subscribedEvents	: uint;
 		
@@ -50,7 +49,7 @@ package aerys.minko.scene.node.group
 			{
 				_subscribedEvents |= _eventsToMask[MouseEvent.MOUSE_OVER];
 			}	
-			else if (!useHandCursor && !_dispatcher.hasEventListener(MouseEvent.MOUSE_OVER))
+			else if (!useHandCursor && !hasEventListener(MouseEvent.MOUSE_OVER))
 			{
 				_subscribedEvents &= ~_eventsToMask[MouseEvent.MOUSE_OVER];
 			}
@@ -60,7 +59,6 @@ package aerys.minko.scene.node.group
 		{
 			super(children);
 			
-			_dispatcher			= new EventDispatcher(this);
 			_subscribedEvents	= 0;
 			
 			if (_eventsToMask == null)
@@ -79,41 +77,28 @@ package aerys.minko.scene.node.group
 			}
 		}
 		
-		public function addEventListener(type 				: String,
-										 listener			: Function,
-										 useCapture			: Boolean	= false,
-										 priority			: int		= 0,
-										 useWeakReference	: Boolean	= false) : void
+		override public function addEventListener(type 				: String,
+										 		  listener			: Function,
+										 		  useCapture		: Boolean	= false,
+										 		  priority			: int		= 0,
+										 		  useWeakReference	: Boolean	= false) : void
 		{
+			super.addEventListener(type, listener, useCapture, priority, useWeakReference);
+			
 			_subscribedEvents |= _eventsToMask[type];
-			
-			_dispatcher.addEventListener(type, listener, useCapture, priority, useWeakReference);
 		}
 		
-		public function removeEventListener(type		: String,
-											listener	: Function,
-											useCapture	: Boolean	= false) : void
+		override public function removeEventListener(type		: String,
+													 listener	: Function,
+													 useCapture	: Boolean	= false) : void
 		{
-			_dispatcher.removeEventListener(type, listener, useCapture);
+			super.removeEventListener(type, listener, useCapture);
 			
-			if (!_dispatcher.hasEventListener(type) // verifie ca
+			if (!hasEventListener(type)
 				&& (type != MouseEvent.MOUSE_OVER || !_useHandCursor))
+			{
 				_subscribedEvents &= ~_eventsToMask[type];
-		}
-		
-		public function dispatchEvent(event	: Event) : Boolean
-		{
-			return _dispatcher.dispatchEvent(event);
-		}
-		
-		public function hasEventListener(type : String) : Boolean
-		{
-			return _dispatcher.hasEventListener(type);
-		}
-		
-		public function willTrigger(type : String) : Boolean
-		{
-			return _dispatcher.willTrigger(type);
+			}
 		}
 	}
 }
