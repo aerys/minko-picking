@@ -2,7 +2,7 @@ package aerys.minko.scene.action.mesh
 {
 	import aerys.minko.render.effect.picking.PickingEffect;
 	import aerys.minko.render.renderer.IRenderer;
-	import aerys.minko.render.renderer.state.RendererState;
+	import aerys.minko.render.renderer.RendererState;
 	import aerys.minko.scene.action.IAction;
 	import aerys.minko.scene.data.IWorldData;
 	import aerys.minko.scene.data.TransformData;

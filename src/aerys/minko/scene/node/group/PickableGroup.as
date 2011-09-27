@@ -4,6 +4,7 @@ package aerys.minko.scene.node.group
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
 	import flash.events.MouseEvent;
+	import aerys.minko.scene.node.group.Group;
 	
 	[Event(name="click", type="flash.events.MouseEvent")]
 	[Event(name="mouseDown", type="flash.events.MouseEvent")]

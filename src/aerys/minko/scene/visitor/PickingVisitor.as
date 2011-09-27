@@ -21,6 +21,7 @@ package aerys.minko.scene.visitor
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
 	import flash.utils.Dictionary;
+	import aerys.minko.scene.visitor.ISceneVisitor;
 	
 	public class PickingVisitor implements ISceneVisitor
 	{
