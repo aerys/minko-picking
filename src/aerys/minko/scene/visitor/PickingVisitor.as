@@ -204,7 +204,7 @@ package aerys.minko.scene.visitor
 			_renderingData.styleStack.set(PickingStyle.CURRENT_COLOR, 0);
 			_renderingData.styleStack.set(PickingStyle.RECTANGLE, RECTANGLE);
 			
-			_renderer.clear();
+			_renderer.reset();
 			
 			visit(scene);
 			
@@ -215,7 +215,7 @@ package aerys.minko.scene.visitor
 		{
 			_renderer.drawToBackBuffer();
 			_renderer.dumpBackbuffer(_bitmapData);
-			_renderer.clear();
+			_renderer.reset();
 		}
 		
 		protected function updateMouseOverElement() : void

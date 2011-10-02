@@ -40,7 +40,7 @@ package aerys.minko.scene.action.mesh
 			var transformData	: TransformData				= visitor.transformData;
 			var worldData		: Dictionary				= visitor.worldData;
 			var renderingData	: RenderingData				= visitor.renderingData;
-			var state			: RendererState 			= RendererState.create(true);
+			var state			: RendererState 			= RendererState.create();
 			
 			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, transformData, worldData))
 			{
