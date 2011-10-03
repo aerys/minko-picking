@@ -200,22 +200,22 @@ package aerys.minko.scene.visitor
 			_numNodes		= 0;
 			_currentPass	= 1;
 			
-			_renderingData.styleStack.push(new Style());
-			_renderingData.styleStack.set(PickingStyle.CURRENT_COLOR, 0);
-			_renderingData.styleStack.set(PickingStyle.RECTANGLE, RECTANGLE);
+			_renderingData.styleData.push(new Style());
+			_renderingData.styleData.set(PickingStyle.CURRENT_COLOR, 0);
+			_renderingData.styleData.set(PickingStyle.RECTANGLE, RECTANGLE);
 			
-			_renderer.clear();
+			_renderer.reset();
 			
 			visit(scene);
 			
-			_renderingData.styleStack.pop();
+			_renderingData.styleData.pop();
 		}
 		
 		protected function renderToBitmapData() : void
 		{
 			_renderer.drawToBackBuffer();
 			_renderer.dumpBackbuffer(_bitmapData);
-			_renderer.clear();
+			_renderer.reset();
 		}
 		
 		protected function updateMouseOverElement() : void
@@ -349,7 +349,7 @@ package aerys.minko.scene.visitor
 				_pickingSceneNodes.push(scene);
 				_currentColor += COLOR_INCREMENT;
 				
-				_renderingData.styleStack.set(PickingStyle.CURRENT_COLOR, _currentColor);
+				_renderingData.styleData.set(PickingStyle.CURRENT_COLOR, _currentColor);
 				
 				_subscribedEvents |= pickableGroup.subscribedEvents;
 			}
