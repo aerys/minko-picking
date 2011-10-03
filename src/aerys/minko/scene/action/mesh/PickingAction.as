@@ -40,9 +40,9 @@ package aerys.minko.scene.action.mesh
 			var transformData	: TransformData				= visitor.transformData;
 			var worldData		: Dictionary				= visitor.worldData;
 			var renderingData	: RenderingData				= visitor.renderingData;
-			var state			: RendererState 			= RendererState.create(true);
+			var state			: RendererState 			= RendererState.create();
 			
-			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleStack, transformData, worldData))
+			if (PICKING_EFFECT_PASS.fillRenderState(state, renderingData.styleData, transformData, worldData))
 			{
 				state.setVertexStreamAt(mesh.vertexStream, 0);
 				state.indexStream = mesh.indexStream;
