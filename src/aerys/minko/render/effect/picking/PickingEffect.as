@@ -23,9 +23,10 @@ package aerys.minko.render.effect.picking
 	
 	public class PickingEffect extends SinglePassEffect implements IEffect, IEffectPass
 	{
-		protected static const TARGET		: RenderTarget	= new RenderTarget(RenderTarget.BACKBUFFER, 0, 0, 0);
 		protected static const SHADER 		: PickingShader = new PickingShader();
 		protected static const RECTANGLE 	: Rectangle 	= new Rectangle(0, 0, 10, 10);
+		
+		private var _renderTarget : RenderTarget;
 		
 		public function PickingEffect(priority		: Number		= 0,
 									  renderTarget	: RenderTarget	= null)
@@ -41,13 +42,19 @@ package aerys.minko.render.effect.picking
 			
 			var currentColor		: uint		= styleData.get(PickingStyle.CURRENT_COLOR, 0) as uint;
 			var isOcludingObject	: Boolean	= styleData.get(PickingStyle.OCLUDER, true);
-			var scissorRectangle	: Rectangle	= styleData.get(PickingStyle.RECTANGLE, 0) as Rectangle;
 			
 			if (!isOcludingObject && currentColor == 0)
 				return false;
 			
+			var width	: uint = ViewportData(worldData[ViewportData]).width;
+			var height	: uint = ViewportData(worldData[ViewportData]).height;
+			
+			if (!_renderTarget || _renderTarget.width != width || _renderTarget.height != height)
+				_renderTarget = new RenderTarget(RenderTarget.BACKBUFFER, width, height);
+			
 			state.blending			= Blending.NORMAL;
-			state.rectangle			= scissorRectangle;
+//			state.rectangle			= RECTANGLE;
+			state.renderTarget		= _renderTarget;
 			
 			return true;
 		}
