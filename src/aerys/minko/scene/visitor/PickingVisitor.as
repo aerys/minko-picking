@@ -221,7 +221,7 @@ package aerys.minko.scene.visitor
 		protected function updateMouseOverElement() : void
 		{
 			var pixelColor : uint = _bitmapData.getPixel(_viewportX, _viewportY);
-			trace(_viewportX, _viewportY, pixelColor);
+
 			_lastMouseOver = _currentMouseOver;
 			if (pixelColor == 0)
 			{
