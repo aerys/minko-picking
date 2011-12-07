@@ -10,7 +10,7 @@ package aerys.minko.render.effect.picking
 			return vertexClipspacePosition;
 		}
 		
-		override protected function getOutputColor() : SValue
+		override protected function getOutputColor(kills : Vector.<SValue>) : SValue
 		{
 			return float4(getStyleParameter(3, PickingStyle.CURRENT_COLOR), 1.);
 		}
