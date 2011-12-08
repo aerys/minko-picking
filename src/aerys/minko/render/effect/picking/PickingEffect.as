@@ -8,6 +8,7 @@ package aerys.minko.render.effect.picking
 	import aerys.minko.render.target.BackBufferRenderTarget;
 	import aerys.minko.scene.data.StyleData;
 	import aerys.minko.scene.data.TransformData;
+	import aerys.minko.scene.data.ViewportData;
 	import aerys.minko.type.enum.Blending;
 	
 	import flash.geom.Rectangle;
@@ -18,6 +19,8 @@ package aerys.minko.render.effect.picking
 		protected static const TARGET		: BackBufferRenderTarget	= new BackBufferRenderTarget(0, 0, 0);
 		protected static const SHADER 		: PickingShader = new PickingShader();
 		protected static const RECTANGLE 	: Rectangle 	= new Rectangle(0, 0, 10, 10);
+		
+		private var _renderTarget	: AbstractRenderTarget	= null;
 		
 		public function PickingEffect(priority		: Number		= 0,
 									  renderTarget	: AbstractRenderTarget	= null)
@@ -38,8 +41,15 @@ package aerys.minko.render.effect.picking
 			if (!isOcludingObject && currentColor == 0)
 				return false;
 			
+			var width	: uint = ViewportData(worldData[ViewportData]).width;
+			var height	: uint = ViewportData(worldData[ViewportData]).height;
+			
+			if (!_renderTarget || _renderTarget.width != width || _renderTarget.height != height)
+				_renderTarget = new BackBufferRenderTarget(width, height);
+			
 			state.blending			= Blending.NORMAL;
-			state.rectangle			= scissorRectangle;
+//			state.rectangle			= scissorRectangle;
+			state.renderTarget		= _renderTarget;
 			
 			return true;
 		}
