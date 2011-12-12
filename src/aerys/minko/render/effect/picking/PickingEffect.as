@@ -1,5 +1,6 @@
 package aerys.minko.render.effect.picking
 {
+	import aerys.minko.render.RenderTarget;
 	import aerys.minko.render.effect.IEffect;
 	import aerys.minko.render.effect.IEffectPass;
 	import aerys.minko.render.effect.SinglePassEffect;
@@ -11,8 +12,6 @@ package aerys.minko.render.effect.picking
 	import aerys.minko.render.shader.node.leaf.Constant;
 	import aerys.minko.render.shader.node.leaf.StyleParameter;
 	import aerys.minko.render.shader.node.operation.manipulation.Combine;
-	import aerys.minko.render.target.AbstractRenderTarget;
-	import aerys.minko.render.target.BackBufferRenderTarget;
 	import aerys.minko.scene.data.StyleData;
 	import aerys.minko.scene.data.TransformData;
 	import aerys.minko.scene.data.ViewportData;
@@ -27,10 +26,10 @@ package aerys.minko.render.effect.picking
 		protected static const SHADER 		: PickingShader = new PickingShader();
 		protected static const RECTANGLE 	: Rectangle 	= new Rectangle(0, 0, 10, 10);
 		
-		private var _renderTarget : AbstractRenderTarget;
+		private var _renderTarget : RenderTarget;
 		
 		public function PickingEffect(priority		: Number		= 0,
-									  renderTarget	: AbstractRenderTarget	= null)
+									  renderTarget	: RenderTarget	= null)
 		{
 			super(SHADER, priority, renderTarget);
 		}
@@ -51,7 +50,7 @@ package aerys.minko.render.effect.picking
 			var height	: uint = ViewportData(worldData[ViewportData]).height;
 			
 			if (!_renderTarget || _renderTarget.width != width || _renderTarget.height != height)
-				_renderTarget = new BackBufferRenderTarget(width, height);
+				_renderTarget = new RenderTarget(RenderTarget.BACKBUFFER, width, height);
 			
 			state.blending			= Blending.NORMAL;
 //			state.rectangle			= RECTANGLE;
