@@ -1,8 +1,6 @@
 package aerys.minko.render.effect.picking
 {
-	import aerys.minko.render.effect.IEffect;
-	import aerys.minko.render.effect.IEffectPass;
-	import aerys.minko.render.effect.SinglePassEffect;
+	import aerys.minko.render.effect.SinglePassRenderingEffect;
 	import aerys.minko.render.renderer.RendererState;
 	import aerys.minko.render.target.AbstractRenderTarget;
 	import aerys.minko.render.target.BackBufferRenderTarget;
@@ -14,7 +12,7 @@ package aerys.minko.render.effect.picking
 	import flash.geom.Rectangle;
 	import flash.utils.Dictionary;
 	
-	public class PickingEffect extends SinglePassEffect implements IEffect, IEffectPass
+	public class PickingEffect extends SinglePassRenderingEffect
 	{
 		protected static const TARGET		: BackBufferRenderTarget	= new BackBufferRenderTarget(0, 0, 0);
 		protected static const SHADER 		: PickingShader = new PickingShader();
