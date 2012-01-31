@@ -73,7 +73,7 @@ package aerys.minko.scene.visitor
 		protected var _currentMouseOver			: PickableGroup;
 		
 		public function get numNodes()		: uint				{ return _numNodes; }
-		public function get transformData()		: TransformData			{ return _transformData; }
+		public function get transformData()	: TransformData		{ return _transformData; }
 		public function get worldData()		: Dictionary		{ return _worldData; }
 		public function get renderingData()	: RenderingData		{ return _renderingData; }
 		public function get ancestors()		: Vector.<IScene>	{ return null; }
@@ -92,7 +92,7 @@ package aerys.minko.scene.visitor
 		
 		
 		public function processSceneGraph(scene			: IScene, 
-										  transformData		: TransformData, 
+										  transformData	: TransformData, 
 										  worldData		: Dictionary, 
 										  renderingData	: RenderingData,
 										  renderer		: IRenderer) : void
@@ -125,13 +125,14 @@ package aerys.minko.scene.visitor
 			}
 			else
 			{
-				createRenderStates(scene);
 				if (!((_waitingForDispatchEvents & _subscribedEvents) ||
 					(_subscribedEvents & DRAW_EVERYTIME_EVENTS)))
 				{
 					_hadToDrawLastTime = false;
 					return;
 				}
+				
+				createRenderStates(scene);
 			}
 			
 			renderToBitmapData();
@@ -201,8 +202,9 @@ package aerys.minko.scene.visitor
 			_currentPass	= 1;
 			
 			_renderingData.styleData.push(new Style());
-			_renderingData.styleData.set(PickingStyle.CURRENT_COLOR, 0);
-			_renderingData.styleData.set(PickingStyle.RECTANGLE, RECTANGLE);
+			_renderingData.styleData
+				.set(PickingStyle.CURRENT_COLOR, 	0)
+				.set(PickingStyle.RECTANGLE, 		RECTANGLE);
 			
 			_renderer.reset();
 			
@@ -230,6 +232,7 @@ package aerys.minko.scene.visitor
 			else
 			{
 				var elementIndex : uint = (pixelColor / COLOR_INCREMENT) - 1;
+				
 				_currentMouseOver = _pickingSceneNodes[elementIndex];
 			}
 		}
