@@ -17,11 +17,11 @@ package aerys.minko.render.effect.picking
 		protected static const SHADER 		: PickingShader 			= new PickingShader();
 		protected static const RECTANGLE 	: Rectangle 				= new Rectangle(0, 0, 10, 10);
 		
-		public function PickingEffect(priority		: Number		= 0,
-									  renderTarget	: AbstractRenderTarget	= null)
+		public function PickingEffect()
 		{
-			super(SHADER, priority, renderTarget);
+			super(SHADER, 0, TARGET);
 		}
+		
 		override public function fillRenderState(state			: RendererState,
 												 styleData		: StyleData, 
 												 transformData	: TransformData, 
