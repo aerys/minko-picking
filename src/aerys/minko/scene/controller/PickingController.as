@@ -5,6 +5,7 @@ package aerys.minko.scene.controller
 	import aerys.minko.render.RenderTarget;
 	import aerys.minko.render.effect.Effect;
 	import aerys.minko.render.shader.ActionScriptShader;
+	import aerys.minko.scene.controller.mesh.RenderingController;
 	import aerys.minko.scene.node.Group;
 	import aerys.minko.scene.node.ISceneNode;
 	import aerys.minko.scene.node.Scene;
@@ -43,22 +44,12 @@ package aerys.minko.scene.controller
 		private static const EVENT_MOUSE_WHEEL	: uint 					= 1 << 7;
 		private static const EVENT_ROLL_OVER	: uint 					= 1 << 8;
 		private static const EVENT_ROLL_OUT		: uint 					= 1 << 9;
-		
-		private static const TYPE_TO_MASK		: Object				= {};
+		private static const EVENT_RIGHT_CLICK	: uint 					= 1 << 10;
+		private static const EVENT_RIGHT_DOWN	: uint 					= 1 << 11;
+		private static const EVENT_RIGHT_UP		: uint 					= 1 << 12;
 		
 		// static initializer
 		{
-			TYPE_TO_MASK[MouseEvent.CLICK] = EVENT_CLICK;
-			TYPE_TO_MASK[MouseEvent.DOUBLE_CLICK] = EVENT_DOUBLE_CLICK;
-			TYPE_TO_MASK[MouseEvent.MOUSE_DOWN] = EVENT_MOUSE_DOWN;
-			TYPE_TO_MASK[MouseEvent.MOUSE_UP] = EVENT_MOUSE_UP;
-			TYPE_TO_MASK[MouseEvent.MOUSE_MOVE] = EVENT_MOUSE_MOVE;
-			TYPE_TO_MASK[MouseEvent.MOUSE_OVER] = EVENT_MOUSE_OVER;
-			TYPE_TO_MASK[MouseEvent.MOUSE_OUT] = EVENT_MOUSE_OUT;
-			TYPE_TO_MASK[MouseEvent.MOUSE_WHEEL] = EVENT_MOUSE_WHEEL;
-			TYPE_TO_MASK[MouseEvent.ROLL_OVER] = EVENT_ROLL_OVER;
-			TYPE_TO_MASK[MouseEvent.ROLL_OUT] = EVENT_ROLL_OUT;
-			
 			PICKING_SHADER.begin.add(cleanPickingMap);
 			PICKING_SHADER.end.add(updatePickingMap);
 		}
@@ -91,6 +82,9 @@ package aerys.minko.scene.controller
 		private var _mouseWheel			: Signal			= new Signal();
 		private var _mouseRollOver		: Signal			= new Signal();
 		private var _mouseRollOut		: Signal			= new Signal();
+		private var _mouseRightClick	: Signal			= new Signal();
+		private var _mouseRightDown		: Signal			= new Signal();
+		private var _mouseRightUp		: Signal			= new Signal();
 		
 		public function get useHandCursor() : Boolean
 		{
@@ -151,6 +145,21 @@ package aerys.minko.scene.controller
 			return _mouseRollOut;
 		}
 		
+		public function get mouseRightClick() : Signal
+		{
+			return _mouseRightClick;
+		}
+		
+		public function get mouseRightDown() : Signal
+		{
+			return _mouseRightDown;
+		}
+		
+		public function get mouseRightUp() : Signal
+		{
+			return _mouseRightUp;
+		}
+		
 		public function PickingController(pickingRate	: Number	= DEFAULT_RATE)
 		{
 			super();
@@ -172,58 +181,28 @@ package aerys.minko.scene.controller
 		public function bindDefaultInputs(dispatcher : IEventDispatcher) : void
 		{
 			// listen for mouse events
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_DOWN,
-				mouseDownHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_UP,
-				mouseUpHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.CLICK,
-				clickHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.DOUBLE_CLICK,
-				doubleClickHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_MOVE,
-				mouseMoveHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_WHEEL,
-				mouseWheelHandler
-			);
+			dispatcher.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			dispatcher.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			dispatcher.addEventListener(MouseEvent.CLICK, clickHandler);
+			dispatcher.addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler);
+			dispatcher.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			dispatcher.addEventListener(MouseEvent.MOUSE_WHEEL,	mouseWheelHandler);
+			dispatcher.addEventListener(MouseEvent.RIGHT_CLICK,	mouseRightClickHandler);
+			dispatcher.addEventListener(MouseEvent.RIGHT_MOUSE_DOWN, mouseRightMouseDownHandler);
+			dispatcher.addEventListener(MouseEvent.RIGHT_MOUSE_UP, mouseRightMouseUpHandler);
 		}
 		
 		public function unbindDefaultInputs(dispatcher : IEventDispatcher) : void
 		{
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_DOWN,
-				mouseDownHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_UP,
-				mouseUpHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.CLICK,
-				clickHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.DOUBLE_CLICK,
-				doubleClickHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_MOVE,
-				mouseMoveHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_WHEEL,
-				mouseWheelHandler
-			);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			dispatcher.removeEventListener(MouseEvent.CLICK, clickHandler);
+			dispatcher.removeEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_WHEEL, mouseWheelHandler);
+			dispatcher.removeEventListener(MouseEvent.RIGHT_CLICK, mouseRightClickHandler);
+			dispatcher.removeEventListener(MouseEvent.RIGHT_MOUSE_DOWN, mouseRightMouseDownHandler);
+			dispatcher.removeEventListener(MouseEvent.RIGHT_MOUSE_UP, mouseRightMouseUpHandler);
 		}
 		
 		private function targetAddedHandler(controller 	: PickingController,
@@ -376,6 +355,14 @@ package aerys.minko.scene.controller
 			if (_waitingForDispatch & EVENT_DOUBLE_CLICK)
 				_mouseDoubleClick.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
+			if (_waitingForDispatch & EVENT_RIGHT_CLICK)
+				_mouseRightClick.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_waitingForDispatch & EVENT_RIGHT_DOWN)
+				_mouseRightDown.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_waitingForDispatch & EVENT_RIGHT_UP)
+				_mouseRightUp.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
 			if (_waitingForDispatch & EVENT_MOUSE_WHEEL)
 			{
@@ -450,6 +437,27 @@ package aerys.minko.scene.controller
 			
 			_waitingForDispatch |= EVENT_MOUSE_WHEEL;
 			_waitingWheelDelta = e.delta;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseRightClickHandler(e : MouseEvent) : void
+		{
+			_waitingForDispatch |= EVENT_RIGHT_CLICK;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseRightMouseDownHandler(e : MouseEvent) : void
+		{
+			_waitingForDispatch |= EVENT_RIGHT_DOWN;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseRightMouseUpHandler(e : MouseEvent) : void
+		{
+			_waitingForDispatch |= EVENT_RIGHT_UP;
 			_mouseX = e.localX;
 			_mouseY = e.localY;
 		}

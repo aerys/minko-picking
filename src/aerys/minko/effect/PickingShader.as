@@ -11,11 +11,9 @@ package aerys.minko.effect
 		
 		public function PickingShader()
 		{
-			super();
+			super(Number.MAX_VALUE);
 			
 			_vertexAnimation = new VertexAnimationShaderPart(this);
-			
-			forkTemplate.priority = Number.MAX_VALUE;
 		}
 		
 		override protected function getVertexPosition() : SFloat
