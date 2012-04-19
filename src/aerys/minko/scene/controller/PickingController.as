@@ -3,8 +3,9 @@ package aerys.minko.scene.controller
 	import aerys.minko.effect.PickingShader;
 	import aerys.minko.ns.minko_scene;
 	import aerys.minko.render.RenderTarget;
+	import aerys.minko.render.Viewport;
 	import aerys.minko.render.effect.Effect;
-	import aerys.minko.render.shader.ActionScriptShader;
+	import aerys.minko.render.shader.Shader;
 	import aerys.minko.scene.node.Group;
 	import aerys.minko.scene.node.ISceneNode;
 	import aerys.minko.scene.node.Scene;
@@ -19,32 +20,28 @@ package aerys.minko.scene.controller
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
 
-	public class PickingController extends AbstractController
+	public class PickingController extends EnterFrameController
 	{
 		use namespace minko_scene;
 		
-		public static const DEFAULT_RATE		: Number				= 15.0;
+		public static const DEFAULT_RATE		: Number	= 15.0;
 		
-		private static const PICKING_SHADER		: ActionScriptShader	= new PickingShader();
-		private static const CONTROLLER			: RenderingController	= new RenderingController(
-			new Effect(PICKING_SHADER)
-		);
-		
-		private static const COLOR_INCREMENT	: uint					= 1;
+		private static const PICKING_SHADER		: Shader	= new PickingShader();
+		private static const COLOR_INCREMENT	: uint		= 1;
 
-		private static const EVENT_NONE			: uint					= 0;
-		private static const EVENT_CLICK		: uint 					= 1 << 0;
-		private static const EVENT_DOUBLE_CLICK	: uint 					= 1 << 1;
-		private static const EVENT_MOUSE_DOWN	: uint 					= 1 << 2;
-		private static const EVENT_MOUSE_UP		: uint 					= 1 << 3;
-		private static const EVENT_MOUSE_MOVE	: uint 					= 1 << 4;
-		private static const EVENT_MOUSE_OVER	: uint 					= 1 << 5;
-		private static const EVENT_MOUSE_OUT	: uint 					= 1 << 6;
-		private static const EVENT_MOUSE_WHEEL	: uint 					= 1 << 7;
-		private static const EVENT_ROLL_OVER	: uint 					= 1 << 8;
-		private static const EVENT_ROLL_OUT		: uint 					= 1 << 9;
+		private static const EVENT_NONE			: uint		= 0;
+		private static const EVENT_CLICK		: uint 		= 1 << 0;
+		private static const EVENT_DOUBLE_CLICK	: uint 		= 1 << 1;
+		private static const EVENT_MOUSE_DOWN	: uint 		= 1 << 2;
+		private static const EVENT_MOUSE_UP		: uint 		= 1 << 3;
+		private static const EVENT_MOUSE_MOVE	: uint 		= 1 << 4;
+		private static const EVENT_MOUSE_OVER	: uint 		= 1 << 5;
+		private static const EVENT_MOUSE_OUT	: uint 		= 1 << 6;
+		private static const EVENT_MOUSE_WHEEL	: uint 		= 1 << 7;
+		private static const EVENT_ROLL_OVER	: uint 		= 1 << 8;
+		private static const EVENT_ROLL_OUT		: uint 		= 1 << 9;
 		
-		private static const TYPE_TO_MASK		: Object				= {};
+		private static const TYPE_TO_MASK		: Object	= {};
 		
 		// static initializer
 		{
@@ -81,16 +78,16 @@ package aerys.minko.scene.controller
 		
 		private var _idToMesh			: Array				= [];
 		
-		private var _mouseClick			: Signal			= new Signal();
-		private var _mouseDoubleClick	: Signal			= new Signal();
-		private var _mouseDown			: Signal			= new Signal();
-		private var _mouseMove			: Signal			= new Signal();
-		private var _mouseOver			: Signal			= new Signal();
-		private var _mouseOut			: Signal			= new Signal();
-		private var _mouseUp			: Signal			= new Signal();
-		private var _mouseWheel			: Signal			= new Signal();
-		private var _mouseRollOver		: Signal			= new Signal();
-		private var _mouseRollOut		: Signal			= new Signal();
+		private var _mouseClick			: Signal			= new Signal('PickingController.mouseClick');
+		private var _mouseDoubleClick	: Signal			= new Signal('PickingController.mouseDoubleClick');
+		private var _mouseDown			: Signal			= new Signal('PickingController.mouseDown');
+		private var _mouseMove			: Signal			= new Signal('PickingController.mouseMove');
+		private var _mouseOver			: Signal			= new Signal('PickingController.mouseOver');
+		private var _mouseOut			: Signal			= new Signal('PickingController.mouseOut');
+		private var _mouseUp			: Signal			= new Signal('PickingController.mouseUp');
+		private var _mouseWheel			: Signal			= new Signal('PickingController.mouseWheel');
+		private var _mouseRollOver		: Signal			= new Signal('PickingController.mouseRollOver');
+		private var _mouseRollOut		: Signal			= new Signal('PickingController.mouseRollOut');
 		
 		public function get useHandCursor() : Boolean
 		{
@@ -226,13 +223,17 @@ package aerys.minko.scene.controller
 			);
 		}
 		
-		private function targetAddedHandler(controller 	: PickingController,
-											target		: Group) : void
+		override protected function targetAddedHandler(controller 	: EnterFrameController,
+													   target		: ISceneNode) : void
 		{
-			target.childAdded.add(childAddedHandler);
+			super.targetAddedHandler(controller, target);
+			
+			var group : Group = target as Group;
+			
+			group.descendantAdded.add(childAddedHandler);
 
 			// fetch meshes
-			var meshes : Vector.<ISceneNode> = target.getDescendantsByType(
+			var meshes : Vector.<ISceneNode> = group.getDescendantsByType(
 				Mesh
 			);
 			var numMeshes : int = meshes.length;
@@ -241,10 +242,12 @@ package aerys.minko.scene.controller
 				meshAddedHandler(meshes[meshId] as Mesh);
 		}
 		
-		private function targetRemovedHandler(controller 	: PickingController,
-											  target		: Group) : void
+		override protected function targetRemovedHandler(controller : EnterFrameController,
+														 target		: ISceneNode) : void
 		{
-			target.childAdded.remove(childAddedHandler);
+			super.targetRemovedHandler(controller, target);
+			
+			(target as Group).descendantAdded.remove(childAddedHandler);
 		}
 
 		private function childAddedHandler(parent 	: Group,
@@ -271,24 +274,34 @@ package aerys.minko.scene.controller
 			mesh.bindings.setProperty("picking id", _pickingId);
 			_idToMesh[int(_pickingId - 1)] = mesh;
 			
-			CONTROLLER.addTarget(mesh);
+			mesh.effect.addPass(PICKING_SHADER);
+			mesh.effectChanged.add(meshEffectChangedHandler);
 		}
 		
 		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
 												   	 scene 	: Scene) : void
 		{
-			CONTROLLER.removeTarget(mesh);
+			mesh.effect.removePass(PICKING_SHADER);
+			mesh.effectChanged.remove(meshEffectChangedHandler);
 			mesh.removedFromScene.remove(meshRemovedFromSceneHandler);
 		}
 		
-		private static function cleanPickingMap(shader		: ActionScriptShader,
+		private function meshEffectChangedHandler(mesh		: Mesh,
+												  oldEffect	: Effect,
+												  newEffect	: Effect) : void
+		{
+			oldEffect.removePass(PICKING_SHADER);
+			newEffect.addPass(PICKING_SHADER);
+		}
+		
+		private static function cleanPickingMap(shader		: Shader,
 												context		: Context3D,
 												backBuffer	: RenderTarget) : void
 		{
 			context.clear();
 		}
 		
-		private static function updatePickingMap(shader		: ActionScriptShader,
+		private static function updatePickingMap(shader		: Shader,
 										  		 context	: Context3D,
 										  		 backBuffer	: RenderTarget) : void
 		{
@@ -301,7 +314,8 @@ package aerys.minko.scene.controller
 			
 			context.drawToBitmapData(_bitmapData);
 			context.clear(
-				(color >>> 16) / 255.,
+				(color >>> 24) / 255.,
+				((color >> 16) & 0xff) / 255.,
 				((color >> 8) & 0xff) / 255.,
 				(color & 0xff) / 255.
 			);
@@ -309,7 +323,7 @@ package aerys.minko.scene.controller
 			PICKING_SHADER.enabled = false;
 		}
 		
-		private function shaderEndHandler(shader		: ActionScriptShader,
+		private function shaderEndHandler(shader		: Shader,
 										  context		: Context3D,
 										  backBuffer	: RenderTarget) : void
 		{
@@ -320,16 +334,21 @@ package aerys.minko.scene.controller
 			}
 		}
 		
-		override public function tick(target : ISceneNode, time : Number) : void
+		override protected function sceneEnterFrameHandler(scene	: Scene,
+														   viewport	: Viewport,
+														   target	: BitmapData,
+														   time		: Number) : void
 		{
 			var deltaT 	: Number 	= time - _lastPickingTime;
 			var enabled : Boolean 	= deltaT > 1000. / _pickingRate;
 			
-			enabled &&= _waitingForDispatch != EVENT_NONE;
-			
-			PICKING_SHADER.enabled ||= enabled;
 			if (enabled)
+			{
+				enabled &&= _waitingForDispatch != EVENT_NONE;
+				
+				PICKING_SHADER.enabled ||= enabled;
 				_lastPickingTime = time;
+			}
 		}
 		
 		private function updateMouseOverElement() : void

@@ -1,11 +1,11 @@
 package aerys.minko.effect
 {
-	import aerys.minko.render.shader.ActionScriptShader;
 	import aerys.minko.render.shader.SFloat;
 	import aerys.minko.render.shader.Shader;
+	import aerys.minko.render.shader.ShaderSettings;
 	import aerys.minko.render.shader.part.animation.VertexAnimationShaderPart;
 	
-	public final class PickingShader extends ActionScriptShader
+	public final class PickingShader extends Shader
 	{
 		private var _vertexAnimation	: VertexAnimationShaderPart	= null;
 		
@@ -14,8 +14,11 @@ package aerys.minko.effect
 			super();
 			
 			_vertexAnimation = new VertexAnimationShaderPart(this);
-			
-			forkTemplate.priority = Number.MAX_VALUE;
+		}
+		
+		override protected function initializeSettings(settings : ShaderSettings) : void
+		{
+			settings.priority = Number.MAX_VALUE;
 		}
 		
 		override protected function getVertexPosition() : SFloat
