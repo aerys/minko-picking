@@ -95,7 +95,7 @@ package aerys.minko.scene.controller
 		}
 		public function set useHandCursor(value : Boolean) : void
 		{
-			_useHandCursor = false;
+			_useHandCursor = value;
 		}
 		
 		public function get mouseClick() : Signal
@@ -268,14 +268,19 @@ package aerys.minko.scene.controller
 		private function meshAddedToSceneHandler(mesh 	: Mesh,
 												 scene 	: Scene) : void
 		{
-			_pickingId += COLOR_INCREMENT;
+			if (!mesh.effect.hasPass(PICKING_SHADER))
+				mesh.effect.addPass(PICKING_SHADER);
 			
-			mesh.removedFromScene.add(meshRemovedFromSceneHandler);
-			mesh.bindings.setProperty("picking id", _pickingId);
-			_idToMesh[int(_pickingId - 1)] = mesh;
+			if (!mesh.effectChanged.hasCallback(meshEffectChangedHandler))
+			{
+				_pickingId += COLOR_INCREMENT;
+				
+				mesh.removedFromScene.add(meshRemovedFromSceneHandler);
+				mesh.bindings.setProperty("picking id", _pickingId);
+				_idToMesh[int(_pickingId - 1)] = mesh;
 			
-			mesh.effect.addPass(PICKING_SHADER);
-			mesh.effectChanged.add(meshEffectChangedHandler);
+				mesh.effectChanged.add(meshEffectChangedHandler);
+			}
 		}
 		
 		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
@@ -327,7 +332,7 @@ package aerys.minko.scene.controller
 										  context		: Context3D,
 										  backBuffer	: RenderTarget) : void
 		{
-			if (_waitingForDispatch != EVENT_NONE)
+			if (_waitingForDispatch != EVENT_NONE || _useHandCursor)
 			{
 				updateMouseOverElement();
 				executeSignals();
@@ -340,13 +345,11 @@ package aerys.minko.scene.controller
 														   time		: Number) : void
 		{
 			var deltaT 	: Number 	= time - _lastPickingTime;
-			var enabled : Boolean 	= deltaT > 1000. / _pickingRate;
 			
-			if (enabled)
+			if (deltaT > 1000. / _pickingRate)
 			{
-				enabled &&= _waitingForDispatch != EVENT_NONE;
-				
-				PICKING_SHADER.enabled ||= enabled;
+				PICKING_SHADER.enabled ||= _waitingForDispatch != EVENT_NONE
+					|| _useHandCursor;
 				_lastPickingTime = time;
 			}
 		}
@@ -369,14 +372,14 @@ package aerys.minko.scene.controller
 
 		private function executeSignals() : void
 		{
-			if (_currentMouseOver != null && _useHandCursor)
-				Mouse.cursor = MouseCursor.HAND;
-			
 			if (_lastMouseOver != null && _currentMouseOver != _lastMouseOver)
 				_mouseRollOut.execute(this, _lastMouseOver, _mouseX, _mouseY);
 			
 			if (_currentMouseOver != null)
 			{
+				if (_useHandCursor)
+					Mouse.cursor = MouseCursor.HAND;
+				
 				_mouseOver.execute(this, _currentMouseOver, _mouseX, _mouseY);
 				
 				if (_currentMouseOver != _lastMouseOver)
@@ -452,14 +455,19 @@ package aerys.minko.scene.controller
 		
 		private function mouseMoveHandler(e : MouseEvent) : void
 		{
-			if (_mouseMove.numCallbacks == 0 && _mouseOver.numCallbacks == 0
-			    && _mouseOut.numCallbacks == 0 && _mouseRollOver.numCallbacks == 0
-				&& _mouseRollOut.numCallbacks == 0)
-				return ;
-			
-			_waitingForDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
-			_mouseX = e.localX;
-			_mouseY = e.localY;
+			if (_mouseMove.numCallbacks != 0 || _mouseOver.numCallbacks != 0
+			    || _mouseOut.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
+				|| _mouseRollOut.numCallbacks != 0)
+			{
+				_waitingForDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
+				_mouseX = e.localX;
+				_mouseY = e.localY;
+			}
+			else if (_useHandCursor)
+			{
+				_mouseX = e.localX;
+				_mouseY = e.localY;
+			}
 		}
 		
 		private function mouseWheelHandler(e : MouseEvent) : void
