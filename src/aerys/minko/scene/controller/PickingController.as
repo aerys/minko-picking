@@ -5,6 +5,7 @@ package aerys.minko.scene.controller
 	import aerys.minko.render.RenderTarget;
 	import aerys.minko.render.Viewport;
 	import aerys.minko.render.effect.Effect;
+	import aerys.minko.render.resource.Context3DResource;
 	import aerys.minko.render.shader.Shader;
 	import aerys.minko.scene.node.Group;
 	import aerys.minko.scene.node.ISceneNode;
@@ -276,7 +277,7 @@ package aerys.minko.scene.controller
 				_pickingId += COLOR_INCREMENT;
 				
 				mesh.removedFromScene.add(meshRemovedFromSceneHandler);
-				mesh.bindings.setProperty("picking id", _pickingId);
+				mesh.bindings.setProperty('pickingId', _pickingId);
 				_idToMesh[int(_pickingId - 1)] = mesh;
 			
 				mesh.effectChanged.add(meshEffectChangedHandler);
@@ -300,14 +301,14 @@ package aerys.minko.scene.controller
 		}
 		
 		private static function cleanPickingMap(shader		: Shader,
-												context		: Context3D,
+												context		: Context3DResource,
 												backBuffer	: RenderTarget) : void
 		{
 			context.clear();
 		}
 		
 		private static function updatePickingMap(shader		: Shader,
-										  		 context	: Context3D,
+										  		 context	: Context3DResource,
 										  		 backBuffer	: RenderTarget) : void
 		{
 			var width 	: Number	= backBuffer.width;
@@ -329,7 +330,7 @@ package aerys.minko.scene.controller
 		}
 		
 		private function shaderEndHandler(shader		: Shader,
-										  context		: Context3D,
+										  context		: Context3DResource,
 										  backBuffer	: RenderTarget) : void
 		{
 			if (_waitingForDispatch != EVENT_NONE || _useHandCursor)

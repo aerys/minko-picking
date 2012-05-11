@@ -19,6 +19,7 @@ package aerys.minko.effect
 		override protected function initializeSettings(settings : ShaderSettings) : void
 		{
 			settings.priority = Number.MAX_VALUE;
+			settings.enabled = meshBindings.propertyExists('pickingId');
 		}
 		
 		override protected function getVertexPosition() : SFloat
@@ -30,7 +31,7 @@ package aerys.minko.effect
 		
 		override protected function getPixelColor() : SFloat
 		{
-			return float4(meshBindings.getParameter("picking id", 3), 1);
+			return float4(meshBindings.getParameter('pickingId', 3), 1);
 		}
 	}
 }
