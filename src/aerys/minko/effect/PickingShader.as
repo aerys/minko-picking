@@ -1,32 +1,17 @@
 package aerys.minko.effect
 {
+	import aerys.minko.render.effect.basic.BasicShader;
 	import aerys.minko.render.shader.SFloat;
-	import aerys.minko.render.shader.Shader;
 	import aerys.minko.render.shader.ShaderSettings;
-	import aerys.minko.render.shader.part.animation.VertexAnimationShaderPart;
 	
-	public final class PickingShader extends Shader
+	public final class PickingShader extends BasicShader
 	{
-		private var _vertexAnimation	: VertexAnimationShaderPart	= null;
-		
-		public function PickingShader()
-		{
-			super();
-			
-			_vertexAnimation = new VertexAnimationShaderPart(this);
-		}
-		
 		override protected function initializeSettings(settings : ShaderSettings) : void
 		{
+			super.initializeSettings(settings);
+			
 			settings.priority = Number.MAX_VALUE;
 			settings.enabled = meshBindings.propertyExists('pickingId');
-		}
-		
-		override protected function getVertexPosition() : SFloat
-		{
-			return localToScreen(
-				_vertexAnimation.getAnimatedVertexPosition()
-			);
 		}
 		
 		override protected function getPixelColor() : SFloat

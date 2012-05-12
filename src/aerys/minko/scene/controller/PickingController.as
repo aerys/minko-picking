@@ -349,8 +349,7 @@ package aerys.minko.scene.controller
 			
 			if (deltaT > 1000. / _pickingRate)
 			{
-				PICKING_SHADER.enabled ||= _waitingForDispatch != EVENT_NONE
-					|| _useHandCursor;
+				PICKING_SHADER.enabled ||= _waitingForDispatch != EVENT_NONE;
 				_lastPickingTime = time;
 			}
 		}
