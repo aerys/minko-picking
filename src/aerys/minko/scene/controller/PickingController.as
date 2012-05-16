@@ -256,6 +256,8 @@ package aerys.minko.scene.controller
 		{
 			if (child is Mesh)
 				meshAddedHandler(child as Mesh);
+			if (child is Group)
+				groupAddedHandler(child as Group);
 		}
 		
 		private function meshAddedHandler(mesh : Mesh) : void
@@ -264,6 +266,15 @@ package aerys.minko.scene.controller
 				meshAddedToSceneHandler(mesh, mesh.root as Scene);
 			else
 				mesh.addedToScene.add(meshAddedToSceneHandler);
+		}
+		
+		private function groupAddedHandler(group : Group) : void
+		{
+			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
+			var numMeshes	: uint 					= meshes.length;
+			
+			for each(var node : ISceneNode in meshes)
+				meshAddedHandler(Mesh(node));
 		}
 		
 		private function meshAddedToSceneHandler(mesh 	: Mesh,
