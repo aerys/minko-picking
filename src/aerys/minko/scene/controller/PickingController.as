@@ -288,7 +288,7 @@ package aerys.minko.scene.controller
 				_pickingId += COLOR_INCREMENT;
 				
 				mesh.removedFromScene.add(meshRemovedFromSceneHandler);
-				mesh.bindings.setProperty('pickingId', _pickingId);
+				mesh.properties.setProperty('pickingId', _pickingId);
 				_idToMesh[int(_pickingId - 1)] = mesh;
 			
 				mesh.effectChanged.add(meshEffectChangedHandler);
