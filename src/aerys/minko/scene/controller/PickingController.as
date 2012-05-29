@@ -298,7 +298,8 @@ package aerys.minko.scene.controller
 		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
 												   	 scene 	: Scene) : void
 		{
-			mesh.effect.removePass(PICKING_SHADER);
+			// FIXME! Test if other meshes are sharing the same effect
+		//	mesh.effect.removePass(PICKING_SHADER);
 			mesh.effectChanged.remove(meshEffectChangedHandler);
 			mesh.removedFromScene.remove(meshRemovedFromSceneHandler);
 		}
