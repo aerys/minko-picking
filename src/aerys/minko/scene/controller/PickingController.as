@@ -20,6 +20,7 @@ package aerys.minko.scene.controller
 	import flash.events.MouseEvent;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
+	import flash.utils.Dictionary;
 
 	public class PickingController extends EnterFrameController
 	{
@@ -78,6 +79,8 @@ package aerys.minko.scene.controller
 		private var _waitingWheelDelta	: int				= 0;
 		
 		private var _idToMesh			: Array				= [];
+		
+		private var _effectsUseCount	: Dictionary		= new Dictionary(true);
 		
 		private var _mouseClick			: Signal			= new Signal('PickingController.mouseClick');
 		private var _mouseDoubleClick	: Signal			= new Signal('PickingController.mouseDoubleClick');
@@ -293,13 +296,17 @@ package aerys.minko.scene.controller
 			
 				mesh.effectChanged.add(meshEffectChangedHandler);
 			}
+			
+			_effectsUseCount[mesh.effect]++;
 		}
 		
 		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
 												   	 scene 	: Scene) : void
 		{
-			// FIXME! Test if other meshes are sharing the same effect
-		//	mesh.effect.removePass(PICKING_SHADER);
+			_effectsUseCount[mesh.effect]--;
+			if (_effectsUseCount[mesh.effect] == 0)
+				mesh.effect.removePass(PICKING_SHADER);
+			
 			mesh.effectChanged.remove(meshEffectChangedHandler);
 			mesh.removedFromScene.remove(meshRemovedFromSceneHandler);
 		}
