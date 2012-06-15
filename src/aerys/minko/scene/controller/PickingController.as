@@ -308,8 +308,11 @@ package aerys.minko.scene.controller
 												  oldEffect	: Effect,
 												  newEffect	: Effect) : void
 		{
-			oldEffect.removePass(PICKING_SHADER);
-			newEffect.addPass(PICKING_SHADER);
+			if (oldEffect.hasPass(PICKING_SHADER))
+				oldEffect.removePass(PICKING_SHADER);
+			
+			if (!newEffect.hasPass(PICKING_SHADER))
+				newEffect.addPass(PICKING_SHADER);
 		}
 		
 		private static function cleanPickingMap(shader		: Shader,
