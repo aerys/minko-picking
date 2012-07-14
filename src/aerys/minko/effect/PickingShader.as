@@ -11,7 +11,7 @@ package aerys.minko.effect
 			super.initializeSettings(settings);
 			
 			settings.priority = Number.MAX_VALUE;
-			settings.enabled = meshBindings.propertyExists('pickingId');
+//			settings.enabled = meshBindings.propertyExists('pickingId');
 		}
 		
 		override protected function getPixelColor() : SFloat

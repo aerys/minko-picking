@@ -26,25 +26,24 @@ package aerys.minko.scene.controller
 	{
 		use namespace minko_scene;
 		
-		public static const DEFAULT_RATE		: Number	= 15.0;
+		public static const DEFAULT_RATE		: Number		= 15.0;
 		
-		private static const PICKING_SHADER		: Shader	= new PickingShader();
-		private static const COLOR_INCREMENT	: uint		= 1;
+		private static const PICKING_SHADER		: Shader		= new PickingShader();
+		private static const ID_INCREMENT		: uint			= 1;
 
-		private static const EVENT_NONE			: uint		= 0;
-		private static const EVENT_CLICK		: uint 		= 1 << 0;
-		private static const EVENT_DOUBLE_CLICK	: uint 		= 1 << 1;
-		private static const EVENT_MOUSE_DOWN	: uint 		= 1 << 2;
-		private static const EVENT_MOUSE_UP		: uint 		= 1 << 3;
-		private static const EVENT_MOUSE_MOVE	: uint 		= 1 << 4;
-		private static const EVENT_MOUSE_OVER	: uint 		= 1 << 5;
-		private static const EVENT_MOUSE_OUT	: uint 		= 1 << 6;
-		private static const EVENT_MOUSE_WHEEL	: uint 		= 1 << 7;
-		private static const EVENT_ROLL_OVER	: uint 		= 1 << 8;
-		private static const EVENT_ROLL_OUT		: uint 		= 1 << 9;
+		private static const EVENT_NONE			: uint			= 0;
+		private static const EVENT_CLICK		: uint 			= 1 << 0;
+		private static const EVENT_DOUBLE_CLICK	: uint 			= 1 << 1;
+		private static const EVENT_MOUSE_DOWN	: uint 			= 1 << 2;
+		private static const EVENT_MOUSE_UP		: uint 			= 1 << 3;
+		private static const EVENT_MOUSE_MOVE	: uint 			= 1 << 4;
+		private static const EVENT_MOUSE_OVER	: uint 			= 1 << 5;
+		private static const EVENT_MOUSE_OUT	: uint 			= 1 << 6;
+		private static const EVENT_MOUSE_WHEEL	: uint 			= 1 << 7;
+		private static const EVENT_ROLL_OVER	: uint 			= 1 << 8;
+		private static const EVENT_ROLL_OUT		: uint 			= 1 << 9;
 		
-		private static const TYPE_TO_MASK		: Object	= {};
-		
+		private static const TYPE_TO_MASK		: Object		= {};
 		// static initializer
 		{
 			TYPE_TO_MASK[MouseEvent.CLICK] = EVENT_CLICK;
@@ -62,8 +61,11 @@ package aerys.minko.scene.controller
 			PICKING_SHADER.end.add(updatePickingMap);
 		}
 		
-		private static var _pickingId	: int				= 0;
-		private static var _bitmapData	: BitmapData		= null;
+		private static const ID_TO_MESH			: Array			= [];
+		private static const EFFECTS_USE_COUNT	: Dictionary	= new Dictionary(true);
+		
+		private static var _pickingId			: uint			= 0;
+		private static var _bitmapData			: BitmapData	= null;
 		
 		private var _pickingRate		: Number			= 0.;
 		private var _lastPickingTime	: Number			= 0.;
@@ -78,9 +80,7 @@ package aerys.minko.scene.controller
 		private var _waitingForDispatch	: uint				= 0;
 		private var _waitingWheelDelta	: int				= 0;
 		
-		private var _idToMesh			: Array				= [];
 		
-		private var _effectsUseCount	: Dictionary		= new Dictionary(true);
 		
 		private var _mouseClick			: Signal			= new Signal('PickingController.mouseClick');
 		private var _mouseDoubleClick	: Signal			= new Signal('PickingController.mouseDoubleClick');
@@ -164,10 +164,6 @@ package aerys.minko.scene.controller
 		private function initialize() : void
 		{
 			PICKING_SHADER.end.add(shaderEndHandler);
-			
-			// listen for new targets
-			targetAdded.add(targetAddedHandler);
-			targetRemoved.add(targetRemovedHandler);
 		}
 		
 		public function bindDefaultInputs(dispatcher : IEventDispatcher) : void
@@ -232,18 +228,11 @@ package aerys.minko.scene.controller
 		{
 			super.targetAddedHandler(controller, target);
 			
-			var group : Group = target as Group;
-			
-			group.descendantAdded.add(childAddedHandler);
-
 			// fetch meshes
-			var meshes : Vector.<ISceneNode> = group.getDescendantsByType(
-				Mesh
-			);
-			var numMeshes : int = meshes.length;
+			var group : Group	= target as Group;
 			
-			for (var meshId : int = 0; meshId < numMeshes; ++meshId)
-				meshAddedHandler(meshes[meshId] as Mesh);
+			groupAddedHandler(group);
+			group.descendantAdded.add(descendantAddedHandler);
 		}
 		
 		override protected function targetRemovedHandler(controller : EnterFrameController,
@@ -251,15 +240,22 @@ package aerys.minko.scene.controller
 		{
 			super.targetRemovedHandler(controller, target);
 			
-			(target as Group).descendantAdded.remove(childAddedHandler);
+			var group 		: Group 				= target as Group;
+			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
+			var numMeshes 	: uint 					= meshes.length;
+			
+//			for (var meshId : int = 0; meshId < numMeshes; ++meshId)
+//				meshRemovedHandler(meshes[meshId] as Mesh);
+			
+			group.descendantAdded.remove(descendantAddedHandler);
 		}
 
-		private function childAddedHandler(parent 	: Group,
-										   child	: ISceneNode) : void
+		private function descendantAddedHandler(parent 	: Group,
+												child	: ISceneNode) : void
 		{
 			if (child is Mesh)
 				meshAddedHandler(child as Mesh);
-			if (child is Group)
+			else if (child is Group)
 				groupAddedHandler(child as Group);
 		}
 		
@@ -276,35 +272,44 @@ package aerys.minko.scene.controller
 			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
 			var numMeshes	: uint 					= meshes.length;
 			
-			for each(var node : ISceneNode in meshes)
-				meshAddedHandler(Mesh(node));
+			for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
+				meshAddedHandler(meshes[meshId] as Mesh);
 		}
 		
 		private function meshAddedToSceneHandler(mesh 	: Mesh,
 												 scene 	: Scene) : void
 		{
+			mesh.addedToScene.remove(meshAddedToSceneHandler);
+			
 			if (!mesh.effect.hasPass(PICKING_SHADER))
 				mesh.effect.addPass(PICKING_SHADER);
 			
-			if (!mesh.effectChanged.hasCallback(meshEffectChangedHandler))
+			if (ID_TO_MESH.indexOf(mesh) < 0)
 			{
-				_pickingId += COLOR_INCREMENT;
+				_pickingId += ID_INCREMENT;
 				
 				mesh.removedFromScene.add(meshRemovedFromSceneHandler);
 				mesh.properties.setProperty('pickingId', _pickingId);
-				_idToMesh[int(_pickingId - 1)] = mesh;
+				ID_TO_MESH[_pickingId] = mesh;
 			
 				mesh.effectChanged.add(meshEffectChangedHandler);
 			}
 			
-			_effectsUseCount[mesh.effect]++;
+			EFFECTS_USE_COUNT[mesh.effect]++;
 		}
 		
 		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
 												   	 scene 	: Scene) : void
 		{
-			_effectsUseCount[mesh.effect]--;
-			if (_effectsUseCount[mesh.effect] == 0)
+			var meshId 	: int 	= ID_TO_MESH.indexOf(mesh);
+			
+			ID_TO_MESH[meshId] = ID_TO_MESH[_pickingId];
+			ID_TO_MESH[_pickingId] = null;
+			_pickingId -= ID_INCREMENT;
+			
+			EFFECTS_USE_COUNT[mesh.effect]--;
+			
+			if (EFFECTS_USE_COUNT[mesh.effect] == 0)
 				mesh.effect.removePass(PICKING_SHADER);
 			
 			mesh.effectChanged.remove(meshEffectChangedHandler);
@@ -315,9 +320,11 @@ package aerys.minko.scene.controller
 												  oldEffect	: Effect,
 												  newEffect	: Effect) : void
 		{
+			EFFECTS_USE_COUNT[oldEffect]--;
 			if (oldEffect.hasPass(PICKING_SHADER))
 				oldEffect.removePass(PICKING_SHADER);
 			
+			EFFECTS_USE_COUNT[newEffect]++;
 			if (!newEffect.hasPass(PICKING_SHADER))
 				newEffect.addPass(PICKING_SHADER);
 		}
@@ -386,9 +393,9 @@ package aerys.minko.scene.controller
 				_currentMouseOver = null;
 			else
 			{
-				var elementIndex : uint = (pixelColor / COLOR_INCREMENT) - 1;
+				var elementIndex : uint = (pixelColor / ID_INCREMENT);
 				
-				_currentMouseOver = _idToMesh[elementIndex];
+				_currentMouseOver = ID_TO_MESH[elementIndex];
 			}
 		}
 
