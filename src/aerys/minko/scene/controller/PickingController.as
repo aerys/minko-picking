@@ -10,9 +10,9 @@ package aerys.minko.scene.controller
 	import aerys.minko.scene.node.Group;
 	import aerys.minko.scene.node.ISceneNode;
 	import aerys.minko.scene.node.Scene;
-	import aerys.minko.scene.node.mesh.Mesh;
+	import aerys.minko.scene.node.Mesh;
 	import aerys.minko.type.Signal;
-	import aerys.minko.type.data.DataBindings;
+	import aerys.minko.type.binding.DataBindings;
 	
 	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
