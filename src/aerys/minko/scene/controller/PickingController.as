@@ -4,14 +4,15 @@ package aerys.minko.scene.controller
 	import aerys.minko.ns.minko_scene;
 	import aerys.minko.render.RenderTarget;
 	import aerys.minko.render.Viewport;
-	import aerys.minko.render.effect.Effect;
+	import aerys.minko.render.Effect;
 	import aerys.minko.render.resource.Context3DResource;
 	import aerys.minko.render.shader.Shader;
 	import aerys.minko.scene.node.Group;
 	import aerys.minko.scene.node.ISceneNode;
 	import aerys.minko.scene.node.Scene;
-	import aerys.minko.scene.node.mesh.Mesh;
+	import aerys.minko.scene.node.Mesh;
 	import aerys.minko.type.Signal;
+	import aerys.minko.type.binding.DataBindings;
 	
 	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
@@ -279,10 +280,13 @@ package aerys.minko.scene.controller
 		private function meshAddedToSceneHandler(mesh 	: Mesh,
 												 scene 	: Scene) : void
 		{
-			mesh.addedToScene.remove(meshAddedToSceneHandler);
+			if (mesh.addedToScene.hasCallback(meshAddedToSceneHandler))
+				mesh.addedToScene.remove(meshAddedToSceneHandler);
 			
-			if (!mesh.effect.hasPass(PICKING_SHADER))
-				mesh.effect.addPass(PICKING_SHADER);
+			var fx : Effect = mesh.material.effect;
+			
+			if (fx && !fx.hasPass(PICKING_SHADER))
+				fx.addPass(PICKING_SHADER);
 			
 			if (ID_TO_MESH.indexOf(mesh) < 0)
 			{
@@ -292,10 +296,10 @@ package aerys.minko.scene.controller
 				mesh.properties.setProperty('pickingId', _pickingId);
 				ID_TO_MESH[_pickingId] = mesh;
 			
-				mesh.effectChanged.add(meshEffectChangedHandler);
+				mesh.bindings.addCallback('effect', meshEffectChangedHandler);
 			}
 			
-			EFFECTS_USE_COUNT[mesh.effect]++;
+			EFFECTS_USE_COUNT[fx]++;
 		}
 		
 		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
@@ -307,25 +311,28 @@ package aerys.minko.scene.controller
 			ID_TO_MESH[_pickingId] = null;
 			_pickingId -= ID_INCREMENT;
 			
-			EFFECTS_USE_COUNT[mesh.effect]--;
+			var fx : Effect = mesh.material ? mesh.material.effect : null;
 			
-			if (EFFECTS_USE_COUNT[mesh.effect] == 0)
-				mesh.effect.removePass(PICKING_SHADER);
+			EFFECTS_USE_COUNT[fx]--;
 			
-			mesh.effectChanged.remove(meshEffectChangedHandler);
+			if (EFFECTS_USE_COUNT[fx] == 0)
+				fx.removePass(PICKING_SHADER);
+			
+			mesh.bindings.removeCallback('effect', meshEffectChangedHandler);
 			mesh.removedFromScene.remove(meshRemovedFromSceneHandler);
 		}
 		
-		private function meshEffectChangedHandler(mesh		: Mesh,
-												  oldEffect	: Effect,
-												  newEffect	: Effect) : void
+		private function meshEffectChangedHandler(bindings		: DataBindings,
+												  propertyName	: String,
+												  oldEffect		: Effect,
+												  newEffect		: Effect) : void
 		{
 			EFFECTS_USE_COUNT[oldEffect]--;
-			if (oldEffect.hasPass(PICKING_SHADER))
+			if (oldEffect && oldEffect.hasPass(PICKING_SHADER))
 				oldEffect.removePass(PICKING_SHADER);
 			
 			EFFECTS_USE_COUNT[newEffect]++;
-			if (!newEffect.hasPass(PICKING_SHADER))
+			if (newEffect && !newEffect.hasPass(PICKING_SHADER))
 				newEffect.addPass(PICKING_SHADER);
 		}
 		
