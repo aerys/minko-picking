@@ -190,8 +190,8 @@ package aerys.minko.scene.controller
 														   time			: Number) : void
 		{
 			// toggle picking pass
-			if (time - _lastPickingTime > 1000. / _pickingRate
-				&& (_toDispatch != EVENT_NONE || _useHandCursor))
+			if (time - _lastPickingTime > 1000. / _pickingRate && (_toDispatch != EVENT_NONE
+				|| (_useHandCursor && _toDispatch & EVENT_MOUSE_MOVE)))
 			{
 				// update picking projection to get the picked pixel in (0, 0)
 				var projection : Matrix4x4 = _sceneData.pickingProjection;
