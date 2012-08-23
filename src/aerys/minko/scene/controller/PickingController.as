@@ -14,6 +14,7 @@ package aerys.minko.scene.controller
 	import aerys.minko.type.Signal;
 	import aerys.minko.type.binding.DataBindings;
 	import aerys.minko.type.binding.DataProvider;
+	import aerys.minko.type.enum.DataProviderUsage;
 	import aerys.minko.type.math.Matrix4x4;
 	
 	import avmplus.getQualifiedClassName;
@@ -163,33 +164,6 @@ package aerys.minko.scene.controller
 				SHADER.end.add(updatePickingMap);
 			}
 			SHADER.end.add(pickingShaderEndHandler);
-		}
-		
-		private function addMesh(mesh : Mesh) : void
-		{
-			_pickingId += ID_INCREMENT;
-			_pickingIdToMesh[_pickingId] = mesh;
-			
-			var meshData : DataProvider = new DataProvider({pickingId : _pickingId});
-			
-			_meshData[mesh] = meshData;
-			mesh.bindings.addProvider(meshData);
-			mesh.bindings.addCallback('effect', effectChangedHandler);
-			
-			if (mesh.material && mesh.material.effect)
-				addPickingToEffect(mesh.material.effect);
-		}
-		
-		private function removeMesh(mesh : Mesh) : void
-		{
-			if (mesh.material && mesh.material.effect)
-				removePickingFromEffect(mesh.material.effect);
-			
-			mesh.bindings.removeCallback('effect', effectChangedHandler);
-			mesh.bindings.removeProvider(_meshData[mesh]);
-			
-			_pickingIdToMesh[_pickingIdToMesh.indexOf(mesh)] = null;
-			delete _meshData[mesh];
 		}
 		
 		private function addPickingToEffect(effect : Effect) : void
@@ -436,24 +410,9 @@ package aerys.minko.scene.controller
 		private function addSceneNode(node : ISceneNode, watchDescendants : Boolean = true) : Boolean
 		{
 			if (node is Mesh)
-			{
 				addMesh(node as Mesh);
-			}
 			else if (node is Group)
-			{
-				var group		: Group					= node as Group;
-				var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
-				var numMeshes 	: uint 					= meshes.length;
-				
-				if (watchDescendants)
-				{
-					group.descendantAdded.add(groupDescendantAddedHandler);
-					group.descendantRemoved.add(groupDescendantRemovedHandler);
-				}
-				
-				for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
-					addMesh(meshes[meshId] as Mesh);
-			}
+				addGroup(node as Group, watchDescendants);
 			else			
 				return false;
 			
@@ -463,24 +422,70 @@ package aerys.minko.scene.controller
 		private function removeSceneNode(node : ISceneNode, unwatchDescendants : Boolean = true) : void
 		{
 			if (node is Mesh)
-			{
 				removeMesh(node as Mesh);
-			}
 			else if (node is Group)
+				removeGroup(node as Group, unwatchDescendants);
+		}
+		
+		private function addMesh(mesh : Mesh) : void
+		{
+			_pickingId += ID_INCREMENT;
+			_pickingIdToMesh[_pickingId] = mesh;
+			
+			var meshData : DataProvider = new DataProvider(
+				{pickingId : _pickingId},
+				'pickingData',
+				DataProviderUsage.EXCLUSIVE
+			);
+			
+			_meshData[mesh] = meshData;
+			mesh.bindings.addProvider(meshData);
+			mesh.bindings.addCallback('effect', effectChangedHandler);
+			
+			if (mesh.material && mesh.material.effect)
+				addPickingToEffect(mesh.material.effect);
+		}
+		
+		private function removeMesh(mesh : Mesh) : void
+		{
+			if (mesh.material && mesh.material.effect)
+				removePickingFromEffect(mesh.material.effect);
+			
+			mesh.bindings.removeCallback('effect', effectChangedHandler);
+			mesh.bindings.removeProvider(_meshData[mesh]);
+			
+			_pickingIdToMesh[_pickingIdToMesh.indexOf(mesh)] = null;
+			delete _meshData[mesh];
+		}
+		
+		private function addGroup(group : Group, watchDescendants : Boolean = true) : void
+		{
+			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
+			var numMeshes 	: uint 					= meshes.length;
+			
+			if (watchDescendants)
 			{
-				var group		: Group					= node as Group;
-				var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
-				var numMeshes 	: uint 					= meshes.length;
-				
-				if (unwatchDescendants)
-				{
-					group.descendantAdded.remove(groupDescendantAddedHandler);
-					group.descendantRemoved.remove(groupDescendantRemovedHandler);
-				}
-				
-				for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
-					removeMesh(meshes[meshId] as Mesh);
+				group.descendantAdded.add(groupDescendantAddedHandler);
+				group.descendantRemoved.add(groupDescendantRemovedHandler);
 			}
+			
+			for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
+				addMesh(meshes[meshId] as Mesh);
+		}
+		
+		private function removeGroup(group : Group, unwatchDescendants : Boolean = true) : void
+		{
+			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
+			var numMeshes 	: uint 					= meshes.length;
+			
+			if (unwatchDescendants)
+			{
+				group.descendantAdded.remove(groupDescendantAddedHandler);
+				group.descendantRemoved.remove(groupDescendantRemovedHandler);
+			}
+			
+			for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
+				removeMesh(meshes[meshId] as Mesh);
 		}
 		
 		private function groupDescendantAddedHandler(group : Group, descendant : ISceneNode) : void
