@@ -1,98 +1,78 @@
 package aerys.minko.scene.controller
 {
 	import aerys.minko.effect.PickingShader;
-	import aerys.minko.ns.minko_scene;
+	import aerys.minko.render.Effect;
 	import aerys.minko.render.RenderTarget;
 	import aerys.minko.render.Viewport;
-	import aerys.minko.render.Effect;
+	import aerys.minko.render.material.Material;
 	import aerys.minko.render.resource.Context3DResource;
 	import aerys.minko.render.shader.Shader;
 	import aerys.minko.scene.node.Group;
 	import aerys.minko.scene.node.ISceneNode;
-	import aerys.minko.scene.node.Scene;
 	import aerys.minko.scene.node.Mesh;
+	import aerys.minko.scene.node.Scene;
 	import aerys.minko.type.Signal;
 	import aerys.minko.type.binding.DataBindings;
+	import aerys.minko.type.binding.DataProvider;
+	import aerys.minko.type.math.Matrix4x4;
+	
+	import avmplus.getQualifiedClassName;
 	
 	import flash.display.BitmapData;
-	import flash.display3D.Context3D;
-	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
 	import flash.events.MouseEvent;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
 	import flash.utils.Dictionary;
-
+	
 	public class PickingController extends EnterFrameController
 	{
-		use namespace minko_scene;
+		private static var _pickingId				: uint			= 0;
 		
-		public static const DEFAULT_RATE		: Number		= 15.0;
+		private static const PICKING_MAP			: BitmapData	= new BitmapData(1, 1, false, 0);
+		private static const SHADER					: Shader		= new PickingShader();
+		private static const ID_INCREMENT			: uint			= 30;
 		
-		private static const PICKING_SHADER		: Shader		= new PickingShader();
-		private static const ID_INCREMENT		: uint			= 1;
-
-		private static const EVENT_NONE			: uint			= 0;
-		private static const EVENT_CLICK		: uint 			= 1 << 0;
-		private static const EVENT_DOUBLE_CLICK	: uint 			= 1 << 1;
-		private static const EVENT_MOUSE_DOWN	: uint 			= 1 << 2;
-		private static const EVENT_MOUSE_UP		: uint 			= 1 << 3;
-		private static const EVENT_MOUSE_MOVE	: uint 			= 1 << 4;
-		private static const EVENT_MOUSE_OVER	: uint 			= 1 << 5;
-		private static const EVENT_MOUSE_OUT	: uint 			= 1 << 6;
-		private static const EVENT_MOUSE_WHEEL	: uint 			= 1 << 7;
-		private static const EVENT_ROLL_OVER	: uint 			= 1 << 8;
-		private static const EVENT_ROLL_OUT		: uint 			= 1 << 9;
+		private static const EFFECT_USE_COUNTER		: Dictionary	= new Dictionary(true);
 		
-		private static const TYPE_TO_MASK		: Object		= {};
-		// static initializer
-		{
-			TYPE_TO_MASK[MouseEvent.CLICK] = EVENT_CLICK;
-			TYPE_TO_MASK[MouseEvent.DOUBLE_CLICK] = EVENT_DOUBLE_CLICK;
-			TYPE_TO_MASK[MouseEvent.MOUSE_DOWN] = EVENT_MOUSE_DOWN;
-			TYPE_TO_MASK[MouseEvent.MOUSE_UP] = EVENT_MOUSE_UP;
-			TYPE_TO_MASK[MouseEvent.MOUSE_MOVE] = EVENT_MOUSE_MOVE;
-			TYPE_TO_MASK[MouseEvent.MOUSE_OVER] = EVENT_MOUSE_OVER;
-			TYPE_TO_MASK[MouseEvent.MOUSE_OUT] = EVENT_MOUSE_OUT;
-			TYPE_TO_MASK[MouseEvent.MOUSE_WHEEL] = EVENT_MOUSE_WHEEL;
-			TYPE_TO_MASK[MouseEvent.ROLL_OVER] = EVENT_ROLL_OVER;
-			TYPE_TO_MASK[MouseEvent.ROLL_OUT] = EVENT_ROLL_OUT;
-			
-			PICKING_SHADER.begin.add(cleanPickingMap);
-			PICKING_SHADER.end.add(updatePickingMap);
-		}
+		private static const EVENT_NONE				: uint			= 0;
+		private static const EVENT_CLICK			: uint 			= 1 << 0;
+		private static const EVENT_DOUBLE_CLICK		: uint 			= 1 << 1;
+		private static const EVENT_MOUSE_DOWN		: uint 			= 1 << 2;
+		private static const EVENT_MOUSE_UP			: uint 			= 1 << 3;
+		private static const EVENT_MOUSE_MOVE		: uint 			= 1 << 4;
+		private static const EVENT_MOUSE_OVER		: uint 			= 1 << 5;
+		private static const EVENT_MOUSE_OUT		: uint 			= 1 << 6;
+		private static const EVENT_MOUSE_WHEEL		: uint 			= 1 << 7;
+		private static const EVENT_ROLL_OVER		: uint 			= 1 << 8;
+		private static const EVENT_ROLL_OUT			: uint 			= 1 << 9;
 		
-		private static const ID_TO_MESH			: Array			= [];
-		private static const EFFECTS_USE_COUNT	: Dictionary	= new Dictionary(true);
+		private var _pickingRate		: Number;
+		private var _lastPickingTime	: uint;
+		private var _useHandCursor		: Boolean;
 		
-		private static var _pickingId			: uint			= 0;
-		private static var _bitmapData			: BitmapData	= null;
+		private var _toDispatch			: uint;
+		private var _sceneData			: DataProvider;
+		private var _meshData			: Dictionary;
+		private var _pickingIdToMesh	: Array;
 		
-		private var _pickingRate		: Number			= 0.;
-		private var _lastPickingTime	: Number			= 0.;
-		private var _mouseX				: Number			= 0.;
-		private var _mouseY				: Number			= 0.;
+		private var _mouseX				: Number;
+		private var _mouseY				: Number;
+		private var _mouseWheelDelta	: Number;
 		
-		private var _dispatcher			: EventDispatcher	= new EventDispatcher();
-		private var _useHandCursor		: Boolean			= false;
-		private var _subscribedEvents	: uint				= 0;
-		private var _currentMouseOver	: Mesh				= null;
-		private var _lastMouseOver		: Mesh				= null;
-		private var _waitingForDispatch	: uint				= 0;
-		private var _waitingWheelDelta	: int				= 0;
+		private var _currentMouseOver	: Mesh;
+		private var _lastMouseOver		: Mesh;
 		
-		
-		
-		private var _mouseClick			: Signal			= new Signal('PickingController.mouseClick');
-		private var _mouseDoubleClick	: Signal			= new Signal('PickingController.mouseDoubleClick');
-		private var _mouseDown			: Signal			= new Signal('PickingController.mouseDown');
-		private var _mouseMove			: Signal			= new Signal('PickingController.mouseMove');
-		private var _mouseOver			: Signal			= new Signal('PickingController.mouseOver');
-		private var _mouseOut			: Signal			= new Signal('PickingController.mouseOut');
-		private var _mouseUp			: Signal			= new Signal('PickingController.mouseUp');
-		private var _mouseWheel			: Signal			= new Signal('PickingController.mouseWheel');
-		private var _mouseRollOver		: Signal			= new Signal('PickingController.mouseRollOver');
-		private var _mouseRollOut		: Signal			= new Signal('PickingController.mouseRollOut');
+		private var _mouseClick			: Signal;
+		private var _mouseDoubleClick	: Signal;
+		private var _mouseDown			: Signal;
+		private var _mouseMove			: Signal;
+		private var _mouseOver			: Signal;
+		private var _mouseOut			: Signal;
+		private var _mouseUp			: Signal;
+		private var _mouseWheel			: Signal;
+		private var _mouseRollOver		: Signal;
+		private var _mouseRollOut		: Signal;
 		
 		public function get useHandCursor() : Boolean
 		{
@@ -153,187 +133,122 @@ package aerys.minko.scene.controller
 			return _mouseRollOut;
 		}
 		
-		public function PickingController(pickingRate	: Number	= DEFAULT_RATE)
+		public function PickingController(pickingRate : Number = 15.)
 		{
-			super();
-			
+			initialize(pickingRate);
+		}
+		
+		private function initialize(pickingRate : Number) : void
+		{
 			_pickingRate = pickingRate;
 			
-			initialize();
-		}
-		
-		private function initialize() : void
-		{
-			PICKING_SHADER.end.add(shaderEndHandler);
-		}
-		
-		public function bindDefaultInputs(dispatcher : IEventDispatcher) : void
-		{
-			// listen for mouse events
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_DOWN,
-				mouseDownHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_UP,
-				mouseUpHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.CLICK,
-				clickHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.DOUBLE_CLICK,
-				doubleClickHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_MOVE,
-				mouseMoveHandler
-			);
-			dispatcher.addEventListener(
-				MouseEvent.MOUSE_WHEEL,
-				mouseWheelHandler
-			);
-		}
-		
-		public function unbindDefaultInputs(dispatcher : IEventDispatcher) : void
-		{
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_DOWN,
-				mouseDownHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_UP,
-				mouseUpHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.CLICK,
-				clickHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.DOUBLE_CLICK,
-				doubleClickHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_MOVE,
-				mouseMoveHandler
-			);
-			dispatcher.removeEventListener(
-				MouseEvent.MOUSE_WHEEL,
-				mouseWheelHandler
-			);
-		}
-		
-		override protected function targetAddedHandler(controller 	: EnterFrameController,
-													   target		: ISceneNode) : void
-		{
-			super.targetAddedHandler(controller, target);
+			_pickingIdToMesh = [];
+			_sceneData = new DataProvider({pickingProjection : new Matrix4x4()});
+			_meshData = new Dictionary(true);
 			
-			// fetch meshes
-			var group : Group	= target as Group;
+			_mouseClick	= new Signal('PickingController.mouseClick');
+			_mouseDoubleClick = new Signal('PickingController.mouseDoubleClick');
+			_mouseDown = new Signal('PickingController.mouseDown');
+			_mouseMove = new Signal('PickingController.mouseMove');
+			_mouseOver = new Signal('PickingController.mouseOver');
+			_mouseOut = new Signal('PickingController.mouseOut');
+			_mouseUp = new Signal('PickingController.mouseUp');
+			_mouseWheel = new Signal('PickingController.mouseWheel');
+			_mouseRollOver = new Signal('PickingController.mouseRollOver');
+			_mouseRollOut = new Signal('PickingController.mouseRollOut');
 			
-			groupAddedHandler(group);
-			group.descendantAdded.add(descendantAddedHandler);
-		}
-		
-		override protected function targetRemovedHandler(controller : EnterFrameController,
-														 target		: ISceneNode) : void
-		{
-			super.targetRemovedHandler(controller, target);
-			
-			var group 		: Group 				= target as Group;
-			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
-			var numMeshes 	: uint 					= meshes.length;
-			
-//			for (var meshId : int = 0; meshId < numMeshes; ++meshId)
-//				meshRemovedHandler(meshes[meshId] as Mesh);
-			
-			group.descendantAdded.remove(descendantAddedHandler);
-		}
-
-		private function descendantAddedHandler(parent 	: Group,
-												child	: ISceneNode) : void
-		{
-			if (child is Mesh)
-				meshAddedHandler(child as Mesh);
-			else if (child is Group)
-				groupAddedHandler(child as Group);
-		}
-		
-		private function meshAddedHandler(mesh : Mesh) : void
-		{
-			if (mesh.root is Scene)
-				meshAddedToSceneHandler(mesh, mesh.root as Scene);
-			else
-				mesh.addedToScene.add(meshAddedToSceneHandler);
-		}
-		
-		private function groupAddedHandler(group : Group) : void
-		{
-			var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
-			var numMeshes	: uint 					= meshes.length;
-			
-			for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
-				meshAddedHandler(meshes[meshId] as Mesh);
-		}
-		
-		private function meshAddedToSceneHandler(mesh 	: Mesh,
-												 scene 	: Scene) : void
-		{
-			if (mesh.addedToScene.hasCallback(meshAddedToSceneHandler))
-				mesh.addedToScene.remove(meshAddedToSceneHandler);
-			
-			var fx : Effect = mesh.material.effect;
-			
-			if (fx && !fx.hasPass(PICKING_SHADER))
-				fx.addPass(PICKING_SHADER);
-			
-			if (ID_TO_MESH.indexOf(mesh) < 0)
+			if (!SHADER.begin.hasCallback(cleanPickingMap))
 			{
-				_pickingId += ID_INCREMENT;
-				
-				mesh.removedFromScene.add(meshRemovedFromSceneHandler);
-				mesh.properties.setProperty('pickingId', _pickingId);
-				ID_TO_MESH[_pickingId] = mesh;
-			
-				mesh.bindings.addCallback('effect', meshEffectChangedHandler);
+				SHADER.begin.add(cleanPickingMap);
+				SHADER.end.add(updatePickingMap);
 			}
-			
-			EFFECTS_USE_COUNT[fx]++;
+			SHADER.end.add(pickingShaderEndHandler);
 		}
 		
-		private function meshRemovedFromSceneHandler(mesh 	: Mesh,
-												   	 scene 	: Scene) : void
+		private function addMesh(mesh : Mesh) : void
 		{
-			var meshId 	: int 	= ID_TO_MESH.indexOf(mesh);
+			_pickingId += ID_INCREMENT;
+			_pickingIdToMesh[_pickingId] = mesh;
 			
-			ID_TO_MESH[meshId] = ID_TO_MESH[_pickingId];
-			ID_TO_MESH[_pickingId] = null;
-			_pickingId -= ID_INCREMENT;
+			var meshData : DataProvider = new DataProvider({pickingId : _pickingId});
 			
-			var fx : Effect = mesh.material ? mesh.material.effect : null;
+			_meshData[mesh] = meshData;
+			mesh.bindings.addProvider(meshData);
+			mesh.bindings.addCallback('effect', effectChangedHandler);
 			
-			EFFECTS_USE_COUNT[fx]--;
-			
-			if (EFFECTS_USE_COUNT[fx] == 0)
-				fx.removePass(PICKING_SHADER);
-			
-			mesh.bindings.removeCallback('effect', meshEffectChangedHandler);
-			mesh.removedFromScene.remove(meshRemovedFromSceneHandler);
+			if (mesh.material && mesh.material.effect)
+				addPickingToEffect(mesh.material.effect);
 		}
 		
-		private function meshEffectChangedHandler(bindings		: DataBindings,
-												  propertyName	: String,
-												  oldEffect		: Effect,
-												  newEffect		: Effect) : void
+		private function removeMesh(mesh : Mesh) : void
 		{
-			EFFECTS_USE_COUNT[oldEffect]--;
-			if (oldEffect && oldEffect.hasPass(PICKING_SHADER))
-				oldEffect.removePass(PICKING_SHADER);
+			if (mesh.material && mesh.material.effect)
+				removePickingFromEffect(mesh.material.effect);
 			
-			EFFECTS_USE_COUNT[newEffect]++;
-			if (newEffect && !newEffect.hasPass(PICKING_SHADER))
-				newEffect.addPass(PICKING_SHADER);
+			mesh.bindings.removeCallback('effect', effectChangedHandler);
+			mesh.bindings.removeProvider(_meshData[mesh]);
+			
+			_pickingIdToMesh[_pickingIdToMesh.indexOf(mesh)] = null;
+			delete _meshData[mesh];
+		}
+		
+		private function addPickingToEffect(effect : Effect) : void
+		{
+			if (!effect)
+				return ;
+			
+			if (!effect.hasPass(SHADER))
+				effect.addPass(SHADER);
+			
+			EFFECT_USE_COUNTER[effect]++;
+		}
+		
+		private function removePickingFromEffect(effect : Effect) : void
+		{
+			if (!effect)
+				return ;
+			
+			EFFECT_USE_COUNTER[effect]--;
+			
+			if (EFFECT_USE_COUNTER[effect] == 0)
+				effect.removePass(SHADER);
+		}
+		
+		private function effectChangedHandler(bindings	: DataBindings,
+											  property	: String,
+											  oldEffect	: Effect,
+											  newEffect	: Effect) : void
+		{
+			removePickingFromEffect(oldEffect);
+			addPickingToEffect(newEffect);
+		}
+		
+		override protected function sceneEnterFrameHandler(scene		: Scene,
+														   viewport		: Viewport,
+														   destination	: BitmapData,
+														   time			: Number) : void
+		{
+			// toggle picking pass
+			if (time - _lastPickingTime > 1000. / _pickingRate
+				&& (_toDispatch != EVENT_NONE || _useHandCursor))
+			{
+				// update picking projection to get the picked pixel in (0, 0)
+				var projection : Matrix4x4 = _sceneData.pickingProjection;
+				
+				projection.lock();
+				scene.activeCamera.getProjection(projection);
+				
+				var rawData : Vector.<Number> = projection.getRawData();
+				
+				rawData[8] = -_mouseX / viewport.width * 2.;
+				rawData[9] = _mouseY / viewport.height * 2.;
+				
+				projection.setRawData(rawData);
+				projection.unlock();
+				
+				SHADER.enabled ||= _toDispatch != EVENT_NONE;
+				_lastPickingTime = time;
+			}
 		}
 		
 		private static function cleanPickingMap(shader		: Shader,
@@ -344,17 +259,12 @@ package aerys.minko.scene.controller
 		}
 		
 		private static function updatePickingMap(shader		: Shader,
-										  		 context	: Context3DResource,
-										  		 backBuffer	: RenderTarget) : void
+												 context	: Context3DResource,
+												 backBuffer	: RenderTarget) : void
 		{
-			var width 	: Number	= backBuffer.width;
-			var height 	: Number 	= backBuffer.height;
-			var color 	: uint		= backBuffer.backgroundColor;
+			var color	: uint	= backBuffer.backgroundColor;
 			
-			if (!_bitmapData || _bitmapData.width != width || _bitmapData.height != height)
-				_bitmapData = new BitmapData(width, height, false, 0);
-			
-			context.drawToBitmapData(_bitmapData);
+			context.drawToBitmapData(PICKING_MAP);
 			context.clear(
 				(color >>> 24) / 255.,
 				((color >> 16) & 0xff) / 255.,
@@ -362,50 +272,25 @@ package aerys.minko.scene.controller
 				(color & 0xff) / 255.
 			);
 			
-			PICKING_SHADER.enabled = false;
+			SHADER.enabled = false;
 		}
 		
-		private function shaderEndHandler(shader		: Shader,
-										  context		: Context3DResource,
-										  backBuffer	: RenderTarget) : void
+		private function pickingShaderEndHandler(shader		: Shader,
+												 context	: Context3DResource,
+												 backBuffer	: RenderTarget) : void
 		{
-			if (_waitingForDispatch != EVENT_NONE || _useHandCursor)
-			{
-				updateMouseOverElement();
-				executeSignals();
-			}
-		}
-		
-		override protected function sceneEnterFrameHandler(scene	: Scene,
-														   viewport	: Viewport,
-														   target	: BitmapData,
-														   time		: Number) : void
-		{
-			var deltaT 	: Number 	= time - _lastPickingTime;
-			
-			if (deltaT > 1000. / _pickingRate)
-			{
-				PICKING_SHADER.enabled ||= _waitingForDispatch != EVENT_NONE;
-				_lastPickingTime = time;
-			}
+			updateMouseOverElement();
+			executeSignals();
 		}
 		
 		private function updateMouseOverElement() : void
 		{
-			var pixelColor : uint = _bitmapData.getPixel(_mouseX, _mouseY);
+			var pixelColor : uint = PICKING_MAP.getPixel(0, 0);
 			
 			_lastMouseOver = _currentMouseOver;
-			
-			if (pixelColor == 0)
-				_currentMouseOver = null;
-			else
-			{
-				var elementIndex : uint = (pixelColor / ID_INCREMENT);
-				
-				_currentMouseOver = ID_TO_MESH[elementIndex];
-			}
+			_currentMouseOver = _pickingIdToMesh[pixelColor];
 		}
-
+		
 		private function executeSignals() : void
 		{
 			if (_lastMouseOver != null && _currentMouseOver != _lastMouseOver)
@@ -421,32 +306,43 @@ package aerys.minko.scene.controller
 				if (_currentMouseOver != _lastMouseOver)
 					_mouseRollOver.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			}
-				
-			if (_waitingForDispatch & EVENT_MOUSE_UP)
+			
+			if (_toDispatch & EVENT_MOUSE_UP)
 				_mouseUp.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
-			if (_waitingForDispatch & EVENT_MOUSE_DOWN)
+			if (_toDispatch & EVENT_MOUSE_DOWN)
 				_mouseDown.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
-			if (_waitingForDispatch & EVENT_CLICK)
+			if (_toDispatch & EVENT_CLICK)
 				_mouseClick.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
-			if (_waitingForDispatch & EVENT_DOUBLE_CLICK)
+			if (_toDispatch & EVENT_DOUBLE_CLICK)
 				_mouseDoubleClick.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
+			if (_toDispatch & EVENT_MOUSE_WHEEL)
+				_mouseWheel.execute(this, _currentMouseOver, _mouseX, _mouseY, _mouseWheelDelta);
 			
-			if (_waitingForDispatch & EVENT_MOUSE_WHEEL)
-			{
-				_mouseWheel.execute(
-					this,
-					_currentMouseOver,
-					_mouseX,
-					_mouseY,
-					_waitingWheelDelta
-				);
-			}
-			
-			_waitingForDispatch = 0;
+			_toDispatch = 0;
+		}
+		
+		public function bindDefaultInputs(dispatcher : IEventDispatcher) : void
+		{
+			dispatcher.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			dispatcher.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			dispatcher.addEventListener(MouseEvent.CLICK, clickHandler);
+			dispatcher.addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler);
+			dispatcher.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			dispatcher.addEventListener(MouseEvent.MOUSE_WHEEL, mouseWheelHandler);
+		}
+		
+		public function unbindDefaultInputs(dispatcher : IEventDispatcher) : void
+		{
+			dispatcher.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			dispatcher.removeEventListener(MouseEvent.CLICK, clickHandler);
+			dispatcher.removeEventListener(MouseEvent.DOUBLE_CLICK,	doubleClickHandler);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			dispatcher.removeEventListener(MouseEvent.MOUSE_WHEEL, mouseWheelHandler);
 		}
 		
 		private function mouseUpHandler(e : MouseEvent) : void
@@ -454,7 +350,7 @@ package aerys.minko.scene.controller
 			if (_mouseUp.numCallbacks == 0)
 				return ;
 			
-			_waitingForDispatch |= EVENT_MOUSE_UP;
+			_toDispatch |= EVENT_MOUSE_UP;
 			_mouseX = e.localX;
 			_mouseY = e.localY;
 		}
@@ -464,7 +360,7 @@ package aerys.minko.scene.controller
 			if (_mouseDown.numCallbacks == 0)
 				return ;
 			
-			_waitingForDispatch |= EVENT_MOUSE_DOWN;	
+			_toDispatch |= EVENT_MOUSE_DOWN;	
 			_mouseX = e.localX;
 			_mouseY = e.localY;
 		}
@@ -474,7 +370,7 @@ package aerys.minko.scene.controller
 			if (_mouseClick.numCallbacks == 0)
 				return ;
 			
-			_waitingForDispatch |= EVENT_CLICK;
+			_toDispatch |= EVENT_CLICK;
 			_mouseX = e.localX;
 			_mouseY = e.localY;
 		}
@@ -484,7 +380,7 @@ package aerys.minko.scene.controller
 			if (_mouseDoubleClick.numCallbacks == 0)
 				return ;
 			
-			_waitingForDispatch |= EVENT_DOUBLE_CLICK;
+			_toDispatch |= EVENT_DOUBLE_CLICK;
 			_mouseX = e.localX;
 			_mouseY = e.localY;
 		}
@@ -492,10 +388,10 @@ package aerys.minko.scene.controller
 		private function mouseMoveHandler(e : MouseEvent) : void
 		{
 			if (_mouseMove.numCallbacks != 0 || _mouseOver.numCallbacks != 0
-			    || _mouseOut.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
+				|| _mouseOut.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
 				|| _mouseRollOut.numCallbacks != 0)
 			{
-				_waitingForDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
+				_toDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
 				_mouseX = e.localX;
 				_mouseY = e.localY;
 			}
@@ -511,10 +407,90 @@ package aerys.minko.scene.controller
 			if (_mouseWheel.numCallbacks == 0)
 				return ;
 			
-			_waitingForDispatch |= EVENT_MOUSE_WHEEL;
-			_waitingWheelDelta = e.delta;
+			_toDispatch |= EVENT_MOUSE_WHEEL;
+			_mouseWheelDelta = e.delta;
 			_mouseX = e.localX;
 			_mouseY = e.localY;
+		}
+		
+		override protected function targetAddedToSceneHandler(target	: ISceneNode,
+															  scene		: Scene) : void
+		{
+			super.targetAddedToSceneHandler(target, scene);
+			
+			if (!scene.bindings.propertyExists('pickingProjection'))
+				scene.bindings.addProvider(_sceneData);
+			
+			if (!addSceneNode(target))
+				throw new Error('Invalid target type: ' + getQualifiedClassName(target));
+		}
+		
+		override protected function targetRemovedFromSceneHandler(target	: ISceneNode,
+																  scene		: Scene) : void
+		{
+			super.targetRemovedFromSceneHandler(target, scene);
+			
+			removeSceneNode(target);
+		}
+		
+		private function addSceneNode(node : ISceneNode, watchDescendants : Boolean = true) : Boolean
+		{
+			if (node is Mesh)
+			{
+				addMesh(node as Mesh);
+			}
+			else if (node is Group)
+			{
+				var group		: Group					= node as Group;
+				var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
+				var numMeshes 	: uint 					= meshes.length;
+				
+				if (watchDescendants)
+				{
+					group.descendantAdded.add(groupDescendantAddedHandler);
+					group.descendantRemoved.add(groupDescendantRemovedHandler);
+				}
+				
+				for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
+					addMesh(meshes[meshId] as Mesh);
+			}
+			else			
+				return false;
+			
+			return true;
+		}
+		
+		private function removeSceneNode(node : ISceneNode, unwatchDescendants : Boolean = true) : void
+		{
+			if (node is Mesh)
+			{
+				removeMesh(node as Mesh);
+			}
+			else if (node is Group)
+			{
+				var group		: Group					= node as Group;
+				var meshes 		: Vector.<ISceneNode> 	= group.getDescendantsByType(Mesh);
+				var numMeshes 	: uint 					= meshes.length;
+				
+				if (unwatchDescendants)
+				{
+					group.descendantAdded.remove(groupDescendantAddedHandler);
+					group.descendantRemoved.remove(groupDescendantRemovedHandler);
+				}
+				
+				for (var meshId : uint = 0; meshId < numMeshes; ++meshId)
+					removeMesh(meshes[meshId] as Mesh);
+			}
+		}
+		
+		private function groupDescendantAddedHandler(group : Group, descendant : ISceneNode) : void
+		{
+			addSceneNode(descendant, false);
+		}
+		
+		private function groupDescendantRemovedHandler(group : Group, descendant : ISceneNode) : void
+		{
+			removeSceneNode(descendant, false);
 		}
 	}
 }
