@@ -60,6 +60,7 @@ package aerys.minko.scene.controller
 		private var _mouseX				: Number;
 		private var _mouseY				: Number;
 		private var _mouseWheelDelta	: Number;
+		private var _oldCursor			: String;
 		
 		private var _currentMouseOver	: Mesh;
 		private var _lastMouseOver		: Mesh;
@@ -68,8 +69,6 @@ package aerys.minko.scene.controller
 		private var _mouseDoubleClick	: Signal;
 		private var _mouseDown			: Signal;
 		private var _mouseMove			: Signal;
-		private var _mouseOver			: Signal;
-		private var _mouseOut			: Signal;
 		private var _mouseUp			: Signal;
 		private var _mouseWheel			: Signal;
 		private var _mouseRollOver		: Signal;
@@ -102,16 +101,6 @@ package aerys.minko.scene.controller
 		public function get mouseMove() : Signal
 		{
 			return _mouseMove;
-		}
-		
-		public function get mouseOver() : Signal
-		{
-			return _mouseOver;
-		}
-		
-		public function get mouseOut() : Signal
-		{
-			return _mouseOut;
 		}
 		
 		public function get mouseUp() : Signal
@@ -151,8 +140,6 @@ package aerys.minko.scene.controller
 			_mouseDoubleClick = new Signal('PickingController.mouseDoubleClick');
 			_mouseDown = new Signal('PickingController.mouseDown');
 			_mouseMove = new Signal('PickingController.mouseMove');
-			_mouseOver = new Signal('PickingController.mouseOver');
-			_mouseOut = new Signal('PickingController.mouseOut');
 			_mouseUp = new Signal('PickingController.mouseUp');
 			_mouseWheel = new Signal('PickingController.mouseWheel');
 			_mouseRollOver = new Signal('PickingController.mouseRollOver');
@@ -220,7 +207,7 @@ package aerys.minko.scene.controller
 				projection.setRawData(rawData);
 				projection.unlock();
 				
-				SHADER.enabled ||= _toDispatch != EVENT_NONE;
+				SHADER.enabled = true;
 				_lastPickingTime = time;
 			}
 		}
@@ -254,6 +241,7 @@ package aerys.minko.scene.controller
 												 backBuffer	: RenderTarget) : void
 		{
 			updateMouseOverElement();
+			updateMouseCursor();
 			executeSignals();
 		}
 		
@@ -265,21 +253,32 @@ package aerys.minko.scene.controller
 			_currentMouseOver = _pickingIdToMesh[pixelColor];
 		}
 		
-		private function executeSignals() : void
+		private function updateMouseCursor() : void
 		{
-			if (_lastMouseOver != null && _currentMouseOver != _lastMouseOver)
-				_mouseRollOut.execute(this, _lastMouseOver, _mouseX, _mouseY);
-			
 			if (_currentMouseOver != null)
 			{
-				if (_useHandCursor)
+				if (_useHandCursor && _oldCursor == null)
+				{
+					_oldCursor = Mouse.cursor;
 					Mouse.cursor = MouseCursor.HAND;
-				
-				_mouseOver.execute(this, _currentMouseOver, _mouseX, _mouseY);
-				
-				if (_currentMouseOver != _lastMouseOver)
-					_mouseRollOver.execute(this, _currentMouseOver, _mouseX, _mouseY);
+				}
 			}
+			else if (_oldCursor)
+			{
+				Mouse.cursor = _oldCursor;
+				_oldCursor = null;
+			}
+		}
+		
+		private function executeSignals() : void
+		{
+			if ((_toDispatch & EVENT_MOUSE_OUT) && _lastMouseOver != null
+				&& _currentMouseOver != _lastMouseOver)
+				_mouseRollOut.execute(this, _lastMouseOver, _mouseX, _mouseY);
+			
+			if ((_toDispatch & EVENT_MOUSE_OVER) && _currentMouseOver != null
+				&& _currentMouseOver != _lastMouseOver)
+				_mouseRollOver.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
 			if (_toDispatch & EVENT_MOUSE_UP)
 				_mouseUp.execute(this, _currentMouseOver, _mouseX, _mouseY);
@@ -296,7 +295,10 @@ package aerys.minko.scene.controller
 			if (_toDispatch & EVENT_MOUSE_WHEEL)
 				_mouseWheel.execute(this, _currentMouseOver, _mouseX, _mouseY, _mouseWheelDelta);
 			
-			_toDispatch = 0;
+			if (_toDispatch & EVENT_MOUSE_MOVE)
+				_mouseMove.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			_toDispatch = EVENT_NONE;
 		}
 		
 		public function bindDefaultInputs(dispatcher : IEventDispatcher) : void
@@ -361,8 +363,7 @@ package aerys.minko.scene.controller
 		
 		private function mouseMoveHandler(e : MouseEvent) : void
 		{
-			if (_mouseMove.numCallbacks != 0 || _mouseOver.numCallbacks != 0
-				|| _mouseOut.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
+			if (_mouseMove.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
 				|| _mouseRollOut.numCallbacks != 0)
 			{
 				_toDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
