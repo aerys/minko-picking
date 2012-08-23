@@ -4,7 +4,6 @@ package aerys.minko.scene.controller
 	import aerys.minko.render.Effect;
 	import aerys.minko.render.RenderTarget;
 	import aerys.minko.render.Viewport;
-	import aerys.minko.render.material.Material;
 	import aerys.minko.render.resource.Context3DResource;
 	import aerys.minko.render.shader.Shader;
 	import aerys.minko.scene.node.Group;
@@ -47,6 +46,12 @@ package aerys.minko.scene.controller
 		private static const EVENT_MOUSE_WHEEL		: uint 			= 1 << 7;
 		private static const EVENT_ROLL_OVER		: uint 			= 1 << 8;
 		private static const EVENT_ROLL_OUT			: uint 			= 1 << 9;
+		private static const EVENT_RIGHT_CLICK		: uint 			= 1 << 10;
+		private static const EVENT_RIGHT_DOWN		: uint 			= 1 << 11;
+		private static const EVENT_RIGHT_UP			: uint 			= 1 << 12;
+		private static const EVENT_MIDDLE_CLICK		: uint 			= 1 << 13;
+		private static const EVENT_MIDDLE_DOWN		: uint 			= 1 << 14;
+		private static const EVENT_MIDDLE_UP		: uint 			= 1 << 15;
 		
 		private var _pickingRate		: Number;
 		private var _lastPickingTime	: uint;
@@ -73,6 +78,12 @@ package aerys.minko.scene.controller
 		private var _mouseWheel			: Signal;
 		private var _mouseRollOver		: Signal;
 		private var _mouseRollOut		: Signal;
+		private var _mouseRightClick	: Signal;
+		private var _mouseRightDown		: Signal;
+		private var _mouseRightUp		: Signal;
+		private var _mouseMiddleClick	: Signal;
+		private var _mouseMiddleDown	: Signal;
+		private var _mouseMiddleUp		: Signal;
 		
 		public function get useHandCursor() : Boolean
 		{
@@ -103,6 +114,36 @@ package aerys.minko.scene.controller
 			return _mouseMove;
 		}
 		
+		public function get mouseRightClick() : Signal
+		{
+			return _mouseRightClick;
+		}
+		
+		public function get mouseRightDown() : Signal
+		{
+			return _mouseRightDown;
+		}
+		
+		public function get mouseRightUp() : Signal
+		{
+			return _mouseRightUp;
+		}
+		
+		public function get mouseMiddleClick() : Signal
+		{
+			return _mouseMiddleClick;
+		}
+		
+		public function get mouseMiddleDown() : Signal
+		{
+			return _mouseMiddleDown;
+		}
+		
+		public function get mouseMiddleUp() : Signal
+		{
+			return _mouseMiddleUp;
+		}
+		
 		public function get mouseUp() : Signal
 		{
 			return _mouseUp;
@@ -121,6 +162,15 @@ package aerys.minko.scene.controller
 		public function get mouseRollOut() : Signal
 		{
 			return _mouseRollOut;
+		}
+		
+		public function get pickingRate() : Number
+		{
+			return _pickingRate;
+		}
+		public function set pickingRate(value : Number) : void
+		{
+			_pickingRate = value;
 		}
 		
 		public function PickingController(pickingRate : Number = 15.)
@@ -144,6 +194,12 @@ package aerys.minko.scene.controller
 			_mouseWheel = new Signal('PickingController.mouseWheel');
 			_mouseRollOver = new Signal('PickingController.mouseRollOver');
 			_mouseRollOut = new Signal('PickingController.mouseRollOut');
+			_mouseRightClick = new Signal('PickingController.mouseRightClick');
+			_mouseRightDown = new Signal('PickingController.mouseRightDown');
+			_mouseRightUp = new Signal('PickingController.mouseRightUp');
+			_mouseMiddleClick = new Signal('PickingController.mouseMiddleClick');
+			_mouseMiddleDown = new Signal('PickingController.mouseMiddleDown');
+			_mouseMiddleUp = new Signal('PickingController.mouseMiddleUp');
 			
 			if (!SHADER.begin.hasCallback(cleanPickingMap))
 			{
@@ -298,6 +354,24 @@ package aerys.minko.scene.controller
 			if (_toDispatch & EVENT_MOUSE_MOVE)
 				_mouseMove.execute(this, _currentMouseOver, _mouseX, _mouseY);
 			
+			if (_toDispatch & EVENT_RIGHT_CLICK)
+				_mouseRightClick.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_toDispatch & EVENT_RIGHT_DOWN)
+				_mouseRightDown.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_toDispatch & EVENT_RIGHT_UP)
+				_mouseRightUp.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_toDispatch & EVENT_MIDDLE_CLICK)
+				_mouseMiddleClick.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_toDispatch & EVENT_MIDDLE_DOWN)
+				_mouseMiddleDown.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
+			if (_toDispatch & EVENT_MIDDLE_UP)
+				_mouseMiddleUp.execute(this, _currentMouseOver, _mouseX, _mouseY);
+			
 			_toDispatch = EVENT_NONE;
 		}
 		
@@ -309,6 +383,20 @@ package aerys.minko.scene.controller
 			dispatcher.addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler);
 			dispatcher.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 			dispatcher.addEventListener(MouseEvent.MOUSE_WHEEL, mouseWheelHandler);
+			
+			if (MouseEvent.RIGHT_CLICK)
+			{
+				dispatcher.addEventListener(MouseEvent.RIGHT_CLICK, mouseRightClickHandler);
+				dispatcher.addEventListener(MouseEvent.RIGHT_MOUSE_DOWN, mouseRightDownHandler);
+				dispatcher.addEventListener(MouseEvent.RIGHT_MOUSE_UP, mouseRightUpHandler);
+			}
+			
+			if (MouseEvent.MIDDLE_CLICK)
+			{
+				dispatcher.addEventListener(MouseEvent.MIDDLE_CLICK, mouseMiddleClickHandler);
+				dispatcher.addEventListener(MouseEvent.MIDDLE_MOUSE_DOWN, mouseMiddleDownHandler);
+				dispatcher.addEventListener(MouseEvent.MIDDLE_MOUSE_UP, mouseMiddleUpHandler);
+			}
 		}
 		
 		public function unbindDefaultInputs(dispatcher : IEventDispatcher) : void
@@ -319,73 +407,20 @@ package aerys.minko.scene.controller
 			dispatcher.removeEventListener(MouseEvent.DOUBLE_CLICK,	doubleClickHandler);
 			dispatcher.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 			dispatcher.removeEventListener(MouseEvent.MOUSE_WHEEL, mouseWheelHandler);
-		}
-		
-		private function mouseUpHandler(e : MouseEvent) : void
-		{
-			if (_mouseUp.numCallbacks == 0)
-				return ;
 			
-			_toDispatch |= EVENT_MOUSE_UP;
-			_mouseX = e.localX;
-			_mouseY = e.localY;
-		}
-		
-		private function mouseDownHandler(e : MouseEvent) : void
-		{
-			if (_mouseDown.numCallbacks == 0)
-				return ;
-			
-			_toDispatch |= EVENT_MOUSE_DOWN;	
-			_mouseX = e.localX;
-			_mouseY = e.localY;
-		}
-		
-		private function clickHandler(e : MouseEvent) : void
-		{
-			if (_mouseClick.numCallbacks == 0)
-				return ;
-			
-			_toDispatch |= EVENT_CLICK;
-			_mouseX = e.localX;
-			_mouseY = e.localY;
-		}
-		
-		private function doubleClickHandler(e : MouseEvent) : void
-		{
-			if (_mouseDoubleClick.numCallbacks == 0)
-				return ;
-			
-			_toDispatch |= EVENT_DOUBLE_CLICK;
-			_mouseX = e.localX;
-			_mouseY = e.localY;
-		}
-		
-		private function mouseMoveHandler(e : MouseEvent) : void
-		{
-			if (_mouseMove.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
-				|| _mouseRollOut.numCallbacks != 0)
+			if (MouseEvent.RIGHT_CLICK)
 			{
-				_toDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
-				_mouseX = e.localX;
-				_mouseY = e.localY;
+				dispatcher.removeEventListener(MouseEvent.RIGHT_CLICK, mouseRightClickHandler);
+				dispatcher.removeEventListener(MouseEvent.RIGHT_MOUSE_DOWN, mouseRightDownHandler);
+				dispatcher.removeEventListener(MouseEvent.RIGHT_MOUSE_UP, mouseRightUpHandler);
 			}
-			else if (_useHandCursor)
-			{
-				_mouseX = e.localX;
-				_mouseY = e.localY;
-			}
-		}
-		
-		private function mouseWheelHandler(e : MouseEvent) : void
-		{
-			if (_mouseWheel.numCallbacks == 0)
-				return ;
 			
-			_toDispatch |= EVENT_MOUSE_WHEEL;
-			_mouseWheelDelta = e.delta;
-			_mouseX = e.localX;
-			_mouseY = e.localY;
+			if (MouseEvent.MIDDLE_CLICK)
+			{
+				dispatcher.removeEventListener(MouseEvent.MIDDLE_CLICK, mouseMiddleClickHandler);
+				dispatcher.removeEventListener(MouseEvent.MIDDLE_MOUSE_DOWN, mouseMiddleDownHandler);
+				dispatcher.removeEventListener(MouseEvent.MIDDLE_MOUSE_UP, mouseMiddleUpHandler);
+			}
 		}
 		
 		override protected function targetAddedToSceneHandler(target	: ISceneNode,
@@ -497,6 +532,133 @@ package aerys.minko.scene.controller
 		private function groupDescendantRemovedHandler(group : Group, descendant : ISceneNode) : void
 		{
 			removeSceneNode(descendant, false);
+		}
+		
+		private function mouseUpHandler(e : MouseEvent) : void
+		{
+			if (_mouseUp.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_MOUSE_UP;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseDownHandler(e : MouseEvent) : void
+		{
+			if (_mouseDown.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_MOUSE_DOWN;	
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function clickHandler(e : MouseEvent) : void
+		{
+			if (_mouseClick.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_CLICK;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function doubleClickHandler(e : MouseEvent) : void
+		{
+			if (_mouseDoubleClick.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_DOUBLE_CLICK;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseMoveHandler(e : MouseEvent) : void
+		{
+			if (_mouseMove.numCallbacks != 0 || _mouseRollOver.numCallbacks != 0
+				|| _mouseRollOut.numCallbacks != 0)
+			{
+				_toDispatch |= EVENT_MOUSE_MOVE | EVENT_MOUSE_OVER | EVENT_MOUSE_OUT;
+				_mouseX = e.localX;
+				_mouseY = e.localY;
+			}
+			else if (_useHandCursor)
+			{
+				_mouseX = e.localX;
+				_mouseY = e.localY;
+			}
+		}
+		
+		private function mouseWheelHandler(e : MouseEvent) : void
+		{
+			if (_mouseWheel.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_MOUSE_WHEEL;
+			_mouseWheelDelta = e.delta;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseRightClickHandler(e : MouseEvent) : void
+		{
+			if (_mouseRightClick.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_RIGHT_CLICK;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseRightDownHandler(e : MouseEvent) : void
+		{
+			if (_mouseRightDown.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_RIGHT_DOWN;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseRightUpHandler(e : MouseEvent) : void
+		{
+			if (_mouseRightUp.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_RIGHT_UP;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseMiddleClickHandler(e : MouseEvent) : void
+		{
+			if (_mouseMiddleClick.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_MIDDLE_CLICK;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseMiddleDownHandler(e : MouseEvent) : void
+		{
+			if (_mouseMiddleDown.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_MIDDLE_DOWN;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
+		}
+		
+		private function mouseMiddleUpHandler(e : MouseEvent) : void
+		{
+			if (_mouseMiddleUp.numCallbacks == 0)
+				return ;
+			
+			_toDispatch |= EVENT_MIDDLE_UP;
+			_mouseX = e.localX;
+			_mouseY = e.localY;
 		}
 	}
 }
