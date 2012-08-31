@@ -31,7 +31,7 @@ package aerys.minko.scene.controller
 		
 		private static const PICKING_MAP			: BitmapData	= new BitmapData(1, 1, false, 0);
 		private static const SHADER					: Shader		= new PickingShader();
-		private static const ID_INCREMENT			: uint			= 30;
+		private static const ID_INCREMENT			: uint			= 1;
 		
 		private static const EFFECT_USE_COUNTER		: Dictionary	= new Dictionary(true);
 		
@@ -205,6 +205,7 @@ package aerys.minko.scene.controller
 			{
 				SHADER.begin.add(cleanPickingMap);
 				SHADER.end.add(updatePickingMap);
+				SHADER.enabled = false;
 			}
 			SHADER.end.add(pickingShaderEndHandler);
 		}
@@ -585,6 +586,7 @@ package aerys.minko.scene.controller
 			}
 			else if (_useHandCursor)
 			{
+				_toDispatch |= EVENT_MOUSE_MOVE;
 				_mouseX = e.localX;
 				_mouseY = e.localY;
 			}
