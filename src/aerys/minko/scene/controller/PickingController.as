@@ -254,7 +254,7 @@ package aerys.minko.scene.controller
 				var projection : Matrix4x4 = _sceneData.pickingProjection;
 				
 				projection.lock();
-				scene.activeCamera.getProjection(projection);
+				projection.copyFrom(scene.activeCamera.projection);
 				
 				var rawData : Vector.<Number> = projection.getRawData();
 				
